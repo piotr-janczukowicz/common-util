@@ -1,6 +1,8 @@
 # common-util
 
-Shared Java utilities. This artifact is a JAR of Java classes. It inherits `common-parent` for the Java **21** build and quality plugins. License: Apache 2.0.
+Shared Java utilities and annotations. This artifact is one JAR with two packages: `pl.piotrjanczukowicz.annotation` (`@RecordBuilder`) and `pl.piotrjanczukowicz.util` (`ValidationUtils`, `DateTimeUtils`, `EnumUtils`). It inherits `common-parent` for the Java **21** build and quality plugins. License: Apache 2.0.
+
+`@RecordBuilder` is a record-builder template. Consuming projects still need `record-builder-processor` on the annotation processor path.
 
 ## Coordinates
 
