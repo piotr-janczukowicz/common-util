@@ -1,4 +1,4 @@
-/** Shared Java utilities: validation, date-time formatting, enum lookup, and classpath resources. */
+/** Shared Java utilities. */
 @NullMarked
 package pl.piotrjanczukowicz.util;
 

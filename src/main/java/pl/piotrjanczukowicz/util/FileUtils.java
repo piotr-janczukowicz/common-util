@@ -25,9 +25,7 @@ public final class FileUtils {
     /**
      * Reads the named classpath resource as UTF-8 text.
      *
-     * <p>Decodes {@link #readBytes(Class, String)} with {@link StandardCharsets#UTF_8}. Resource lookup follows
-     * {@link Class#getResourceAsStream(String)}: relative names are in {@code type}'s package; names that start with
-     * {@code '/'} are at the classpath root.
+     * <p>Decodes {@link #readBytes(Class, String)} with {@link StandardCharsets#UTF_8}.
      *
      * @param type class used to locate the resource
      * @param fileName resource name, not a filesystem path
@@ -43,10 +41,6 @@ public final class FileUtils {
 
     /**
      * Reads the named classpath resource as bytes.
-     *
-     * <p>Resource lookup follows {@link Class#getResourceAsStream(String)}: relative names are in {@code type}'s
-     * package; names that start with {@code '/'} are at the classpath root. The stream is closed after the resource is
-     * read.
      *
      * @param type class used to locate the resource
      * @param fileName resource name, not a filesystem path

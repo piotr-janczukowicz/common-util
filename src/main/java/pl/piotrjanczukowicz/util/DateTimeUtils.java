@@ -9,8 +9,7 @@ import java.time.temporal.ChronoUnit;
 /**
  * Date-time formatting helpers.
  *
- * <p>Converts {@link Instant} values to ISO-8601 UTC text. Formatting uses the ISO instant profile ({@code Z} offset),
- * not a local time zone. Sub-second precision is dropped unless a more specific method is added later.
+ * <p>Converts {@link Instant} values to ISO-8601 UTC text ({@code Z} offset), not a local time zone.
  */
 public final class DateTimeUtils {
 
@@ -21,9 +20,9 @@ public final class DateTimeUtils {
     /**
      * Formats {@code instant} as ISO-8601 UTC, truncated to whole seconds.
      *
-     * <p>Applies {@link Instant#truncatedTo(java.time.temporal.TemporalUnit)} with {@link ChronoUnit#SECONDS}, then
+     * <p>Nanos are discarded with {@link ChronoUnit#SECONDS} (not rounded), then formatted with
      * {@link DateTimeFormatter#ISO_INSTANT}. For example {@code 2024-01-01T00:00:00.123456789Z} becomes
-     * {@code 2024-01-01T00:00:00Z}. Truncation is toward the start of the second, not rounding.
+     * {@code 2024-01-01T00:00:00Z}.
      *
      * @param instant instant to format
      * @return ISO-8601 UTC timestamp with second precision
