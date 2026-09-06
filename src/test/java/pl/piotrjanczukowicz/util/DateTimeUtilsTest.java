@@ -39,7 +39,9 @@ class DateTimeUtilsTest {
 
     @Test
     void toIso_shouldThrow_whenInstantNull() {
-        final Throwable thrown = catchThrowable(() -> DateTimeUtils.toIso(null));
+        final Instant instant = null;
+
+        final Throwable thrown = catchThrowable(() -> DateTimeUtils.toIso(instant));
 
         assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("instant");
     }

@@ -8,10 +8,12 @@ class RecordBuilderTest {
 
     @Test
     void build_shouldEqualCanonicalConstructor() {
-        final SampleRecord expected = new SampleRecord("octocat", 42);
+        final String name = "octocat";
+        final int count = 42;
+        final SampleRecord expected = new SampleRecord(name, count);
 
         final SampleRecord built =
-                SampleRecordBuilder.builder().name("octocat").count(42).build();
+                SampleRecordBuilder.builder().name(name).count(count).build();
 
         assertThat(built).isEqualTo(expected);
     }

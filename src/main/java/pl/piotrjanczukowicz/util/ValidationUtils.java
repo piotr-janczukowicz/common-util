@@ -9,7 +9,14 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
-/** Argument validation helpers. */
+/**
+ * Argument validation helpers.
+ *
+ * <p>Fail-fast checks for method arguments and configuration. Each {@code require*} method either returns the same
+ * instance (so the result can be assigned) or throws. {@code name} is included in the exception message so the failing
+ * argument can be identified. {@code null} is rejected with {@link NullPointerException}; other violations use
+ * {@link IllegalArgumentException}. Numeric bounds are inclusive unless a method says otherwise.
+ */
 public final class ValidationUtils {
 
     private ValidationUtils() {
@@ -35,6 +42,9 @@ public final class ValidationUtils {
     /**
      * Requires {@code value} to be non-null and not blank.
      *
+     * <p>Blank follows {@link String#isBlank()}: empty or only Unicode whitespace. Surrounding whitespace is not
+     * stripped; a value that contains non-whitespace still passes even if it also has spaces.
+     *
      * @param value value to check
      * @param name argument name included in the exception message
      * @return {@code value}
@@ -50,7 +60,7 @@ public final class ValidationUtils {
     }
 
     /**
-     * Requires {@code duration} to be positive.
+     * Requires {@code duration} to be strictly positive.
      *
      * @param duration duration to check
      * @param name argument name included in the exception message
@@ -101,6 +111,9 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code value} to be finite and at least {@code minimum}.
+     *
+     * <p>The lower bound is inclusive. {@link Double#NaN}, infinities, and values below {@code minimum} fail. Finite is
+     * checked before the bound so a NaN does not compare as in-range.
      *
      * @param value value to check
      * @param minimum inclusive lower bound
@@ -288,6 +301,9 @@ public final class ValidationUtils {
     /**
      * Requires {@code values} to contain no duplicate elements.
      *
+     * <p>Uniqueness follows {@link Object#equals(Object)} and {@link Object#hashCode()} via a {@link HashSet}. Element
+     * order is not changed. Two {@code null} elements count as duplicates.
+     *
      * @param values collection to check
      * @param name argument name included in the exception message
      * @param <T> collection type
@@ -326,6 +342,8 @@ public final class ValidationUtils {
     /**
      * Requires {@code value} to have length at most {@code max}.
      *
+     * <p>Length is {@link String#length()} (UTF-16 code units), not Unicode code points. The maximum is inclusive.
+     *
      * @param value string to check
      * @param max inclusive maximum length
      * @param name argument name included in the exception message
@@ -344,6 +362,9 @@ public final class ValidationUtils {
     /**
      * Requires {@code value} to have length at most {@code max} when it is non-null.
      *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with
+     * {@link #requireMaxLength(String, int, String)}.
+     *
      * @param value string to check, or {@code null}
      * @param max inclusive maximum length
      * @param name argument name included in the exception message
@@ -360,6 +381,9 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code value} to match {@code pattern}.
+     *
+     * <p>Matching uses {@link java.util.regex.Matcher#find()}, so a substring match succeeds; the pattern does not have
+     * to cover the entire string unless it is anchored. Use {@code ^} and {@code $} when the whole value must match.
      *
      * @param value string to check
      * @param pattern regex applied with {@link java.util.regex.Matcher#find()}
@@ -388,7 +412,7 @@ public final class ValidationUtils {
     }
 
     /**
-     * Returns {@code true} if {@code duration} is non-null and positive.
+     * Returns {@code true} if {@code duration} is non-null and strictly positive.
      *
      * @param duration duration to inspect, or {@code null}
      * @return {@code true} if {@code duration} is positive
