@@ -9,7 +9,14 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
-/** Argument validation helpers. */
+/**
+ * Argument validation helpers.
+ *
+ * <p>Fail-fast checks for method arguments and configuration. Each {@code require*} method either returns the same
+ * instance (so the result can be assigned) or throws. {@code name} is included in the exception message so the failing
+ * argument can be identified. {@code null} is rejected with {@link NullPointerException}; other violations use
+ * {@link IllegalArgumentException}. Numeric bounds are inclusive unless a method says otherwise.
+ */
 public final class ValidationUtils {
 
     private ValidationUtils() {
@@ -18,6 +25,8 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code value} to be non-null.
+     *
+     * <p>Delegates to {@link Objects#requireNonNull(Object, String)} using {@code name} as the exception message.
      *
      * @param value value to check
      * @param name argument name included in the exception message
@@ -35,6 +44,9 @@ public final class ValidationUtils {
     /**
      * Requires {@code value} to be non-null and not blank.
      *
+     * <p>Blank follows {@link String#isBlank()}: empty or only Unicode whitespace. Surrounding whitespace is not
+     * stripped; a value that contains non-whitespace still passes even if it also has spaces.
+     *
      * @param value value to check
      * @param name argument name included in the exception message
      * @return {@code value}
@@ -50,7 +62,10 @@ public final class ValidationUtils {
     }
 
     /**
-     * Requires {@code duration} to be positive.
+     * Requires {@code duration} to be strictly positive.
+     *
+     * <p>Zero and negative durations fail. {@link Duration#isZero()} and {@link Duration#isNegative()} define the
+     * check; a duration of one nanosecond passes.
      *
      * @param duration duration to check
      * @param name argument name included in the exception message
@@ -69,6 +84,8 @@ public final class ValidationUtils {
     /**
      * Requires {@code duration} to be zero or positive.
      *
+     * <p>Negative durations fail. Zero is allowed.
+     *
      * @param duration duration to check
      * @param name argument name included in the exception message
      * @return {@code duration}
@@ -86,6 +103,8 @@ public final class ValidationUtils {
     /**
      * Requires {@code value} to be at least {@code minimum}.
      *
+     * <p>The lower bound is inclusive. There is no upper bound.
+     *
      * @param value value to check
      * @param minimum inclusive lower bound
      * @param name argument name included in the exception message
@@ -101,6 +120,9 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code value} to be finite and at least {@code minimum}.
+     *
+     * <p>The lower bound is inclusive. {@link Double#NaN}, infinities, and values below {@code minimum} fail. Finite is
+     * checked before the bound so a NaN does not compare as in-range.
      *
      * @param value value to check
      * @param minimum inclusive lower bound
@@ -121,6 +143,8 @@ public final class ValidationUtils {
     /**
      * Requires {@code value} to be at most {@code maximum}.
      *
+     * <p>The upper bound is inclusive. There is no lower bound.
+     *
      * @param value value to check
      * @param maximum inclusive upper bound
      * @param name argument name included in the exception message
@@ -136,6 +160,8 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code value} to be finite and at most {@code maximum}.
+     *
+     * <p>The upper bound is inclusive. {@link Double#NaN} and infinities fail before the bound is applied.
      *
      * @param value value to check
      * @param maximum inclusive upper bound
@@ -156,6 +182,10 @@ public final class ValidationUtils {
     /**
      * Requires {@code value} to be finite and within {@code minimum} and {@code maximum}, inclusive.
      *
+     * <p>Equivalent to {@link #requireAtLeast(double, double, String)} then {@link #requireAtMost(double, double,
+     * String)}. {@code minimum} should not be greater than {@code maximum}; that combination rejects every finite
+     * value.
+     *
      * @param value value to check
      * @param minimum inclusive lower bound
      * @param maximum inclusive upper bound
@@ -171,6 +201,9 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code value} to be at least {@code minimum}.
+     *
+     * <p>Comparison uses {@link Duration#compareTo(Duration)}, so signs and magnitudes follow {@link Duration}
+     * ordering. Equality with {@code minimum} is allowed.
      *
      * @param value duration to check
      * @param minimum inclusive lower bound
@@ -188,6 +221,8 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code values} to be non-null and non-empty.
+     *
+     * <p>Emptiness is {@link Collection#isEmpty()}. Element contents are not inspected.
      *
      * @param values collection to check
      * @param name argument name included in the exception message
@@ -207,6 +242,8 @@ public final class ValidationUtils {
     /**
      * Requires {@code values} to contain at most {@code max} elements.
      *
+     * <p>The maximum is inclusive. An empty collection passes.
+     *
      * @param values collection to check
      * @param max inclusive maximum size
      * @param name argument name included in the exception message
@@ -225,6 +262,8 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code values} to contain at least {@code min} elements.
+     *
+     * <p>The minimum is inclusive.
      *
      * @param values collection to check
      * @param min inclusive minimum size
@@ -264,6 +303,9 @@ public final class ValidationUtils {
     /**
      * Requires {@code values} to contain between {@code min} and {@code max} elements, inclusive.
      *
+     * <p>Size is checked against both bounds. {@code min} should not be greater than {@code max}; that combination
+     * rejects every collection.
+     *
      * @param values collection to check
      * @param min inclusive minimum size
      * @param max inclusive maximum size
@@ -288,6 +330,9 @@ public final class ValidationUtils {
     /**
      * Requires {@code values} to contain no duplicate elements.
      *
+     * <p>Uniqueness follows {@link Object#equals(Object)} and {@link Object#hashCode()} via a {@link HashSet}. Element
+     * order is not changed. Two {@code null} elements count as duplicates.
+     *
      * @param values collection to check
      * @param name argument name included in the exception message
      * @param <T> collection type
@@ -305,6 +350,8 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code map} to contain at most {@code max} entries.
+     *
+     * <p>The maximum is inclusive. An empty map passes. Keys and values are not inspected.
      *
      * @param map map to check
      * @param max inclusive maximum size
@@ -326,6 +373,8 @@ public final class ValidationUtils {
     /**
      * Requires {@code value} to have length at most {@code max}.
      *
+     * <p>Length is {@link String#length()} (UTF-16 code units), not Unicode code points. The maximum is inclusive.
+     *
      * @param value string to check
      * @param max inclusive maximum length
      * @param name argument name included in the exception message
@@ -344,6 +393,9 @@ public final class ValidationUtils {
     /**
      * Requires {@code value} to have length at most {@code max} when it is non-null.
      *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with
+     * {@link #requireMaxLength(String, int, String)}.
+     *
      * @param value string to check, or {@code null}
      * @param max inclusive maximum length
      * @param name argument name included in the exception message
@@ -360,6 +412,9 @@ public final class ValidationUtils {
 
     /**
      * Requires {@code value} to match {@code pattern}.
+     *
+     * <p>Matching uses {@link java.util.regex.Matcher#find()}, so a substring match succeeds; the pattern does not have
+     * to cover the entire string unless it is anchored. Use {@code ^} and {@code $} when the whole value must match.
      *
      * @param value string to check
      * @param pattern regex applied with {@link java.util.regex.Matcher#find()}
@@ -380,6 +435,8 @@ public final class ValidationUtils {
     /**
      * Returns {@code true} if {@code duration} is {@code null}, negative, or zero.
      *
+     * <p>Treats {@code null} as not positive. Zero and negative durations also return {@code true}.
+     *
      * @param duration duration to inspect, or {@code null}
      * @return {@code true} if {@code duration} is missing or not positive
      */
@@ -388,7 +445,7 @@ public final class ValidationUtils {
     }
 
     /**
-     * Returns {@code true} if {@code duration} is non-null and positive.
+     * Returns {@code true} if {@code duration} is non-null and strictly positive.
      *
      * @param duration duration to inspect, or {@code null}
      * @return {@code true} if {@code duration} is positive

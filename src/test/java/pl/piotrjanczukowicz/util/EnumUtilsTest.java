@@ -2,7 +2,6 @@ package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.lang.reflect.Constructor;
 import java.util.Optional;
@@ -31,10 +30,19 @@ class EnumUtilsTest {
             final String wire, final Class<E> enumClass, final Function<E, String> wireValue, final E expected) {
         final Optional<E> resolved = EnumUtils.fromWire(wire, enumClass, wireValue);
 
-        assertSoftly(softly -> {
-            softly.assertThat(resolved).contains(expected);
-            softly.assertThat(EnumUtils.fromWire(wire, enumClass, wireValue)).contains(expected);
-        });
+        assertThat(resolved).contains(expected);
+    }
+
+    @Test
+    void fromWire_shouldReturnConstant_whenLookupIsCached() {
+        final String wire = "secret";
+        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
+        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
+        EnumUtils.fromWire(wire, enumClass, wireValue);
+
+        final Optional<SampleWireEnum> resolved = EnumUtils.fromWire(wire, enumClass, wireValue);
+
+        assertThat(resolved).contains(SampleWireEnum.SECRET);
     }
 
     @ParameterizedTest
@@ -48,22 +56,33 @@ class EnumUtilsTest {
 
     @Test
     void fromWire_shouldThrow_whenValueNull() {
-        final Throwable thrown =
-                catchThrowable(() -> EnumUtils.fromWire(null, SampleWireEnum.class, SampleWireEnum::wireValue));
+        final String value = null;
+        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
+        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
+
+        final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire(value, enumClass, wireValue));
 
         assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("value");
     }
 
     @Test
     void fromWire_shouldThrow_whenEnumClassNull() {
-        final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire("secret", null, SampleWireEnum::wireValue));
+        final String value = "secret";
+        final Class<SampleWireEnum> enumClass = null;
+        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
+
+        final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire(value, enumClass, wireValue));
 
         assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("enumClass");
     }
 
     @Test
     void fromWire_shouldThrow_whenWireValueNull() {
-        final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire("secret", SampleWireEnum.class, null));
+        final String value = "secret";
+        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
+        final Function<SampleWireEnum, String> wireValue = null;
+
+        final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire(value, enumClass, wireValue));
 
         assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("wireValue");
     }
