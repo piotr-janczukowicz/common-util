@@ -1,12 +1,12 @@
 package pl.piotrjanczukowicz.util;
 
-import static pl.piotrjanczukowicz.util.ValidationUtils.requireNonNull;
 import static pl.piotrjanczukowicz.util.ValidationUtils.requireNotBlank;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * Classpath resource helpers.
@@ -51,8 +51,8 @@ public final class FileUtils {
      * @throws UncheckedIOException if reading or closing the resource fails
      */
     public static byte[] readBytes(final Class<?> type, final String fileName) {
-        requireNonNull(type, "type");
-        requireNotBlank(fileName, "fileName");
+        Objects.requireNonNull(type, "type must not be null");
+        requireNotBlank(fileName, "fileName must not be blank");
 
         try (final InputStream stream = type.getResourceAsStream(fileName)) {
             if (stream == null) {

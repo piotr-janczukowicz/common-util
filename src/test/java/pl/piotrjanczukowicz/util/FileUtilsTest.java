@@ -51,7 +51,7 @@ class FileUtilsTest {
 
         final Throwable thrown = catchThrowable(() -> FileUtils.readString(type, fileName));
 
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("type");
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("type must not be null");
     }
 
     @Test
@@ -61,7 +61,7 @@ class FileUtilsTest {
 
         final Throwable thrown = catchThrowable(() -> FileUtils.readString(type, fileName));
 
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("fileName");
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("fileName must not be blank");
     }
 
     @Test

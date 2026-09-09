@@ -62,7 +62,7 @@ class EnumUtilsTest {
 
         final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire(value, enumClass, wireValue));
 
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("value");
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("value must not be null");
     }
 
     @Test
@@ -73,7 +73,7 @@ class EnumUtilsTest {
 
         final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire(value, enumClass, wireValue));
 
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("enumClass");
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("enumClass must not be null");
     }
 
     @Test
@@ -84,7 +84,7 @@ class EnumUtilsTest {
 
         final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire(value, enumClass, wireValue));
 
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("wireValue");
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("wireValue must not be null");
     }
 
     private static Stream<Arguments> wireHits() {
