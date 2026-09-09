@@ -1,8 +1,7 @@
 package pl.piotrjanczukowicz.util;
 
-import static pl.piotrjanczukowicz.util.ValidationUtils.requireNonNull;
-
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -42,9 +41,9 @@ public final class EnumUtils {
      */
     public static <E extends Enum<E>> Optional<E> fromWire(
             final String value, final Class<E> enumClass, final Function<E, String> wireValue) {
-        requireNonNull(value, "value");
-        requireNonNull(enumClass, "enumClass");
-        requireNonNull(wireValue, "wireValue");
+        Objects.requireNonNull(value, "value must not be null");
+        Objects.requireNonNull(enumClass, "enumClass must not be null");
+        Objects.requireNonNull(wireValue, "wireValue must not be null");
 
         return Optional.ofNullable(index(enumClass, wireValue).get(value));
     }

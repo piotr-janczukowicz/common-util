@@ -1,10 +1,9 @@
 package pl.piotrjanczukowicz.util;
 
-import static pl.piotrjanczukowicz.util.ValidationUtils.requireNonNull;
-
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 /**
  * Date-time formatting helpers.
@@ -29,7 +28,7 @@ public final class DateTimeUtils {
      * @throws NullPointerException if {@code instant} is {@code null}
      */
     public static String toIso(final Instant instant) {
-        requireNonNull(instant, "instant");
+        Objects.requireNonNull(instant, "instant must not be null");
 
         return DateTimeFormatter.ISO_INSTANT.format(instant.truncatedTo(ChronoUnit.SECONDS));
     }
