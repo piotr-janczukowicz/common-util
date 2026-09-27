@@ -1,7 +1,7 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.lang.reflect.Constructor;
 import java.util.Optional;
@@ -15,18 +15,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 class EnumUtilsTest {
 
     @Test
-    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
+    void constructor_whenInstantiatedViaReflection_shouldThrow() throws Exception {
         final Constructor<EnumUtils> constructor = EnumUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
 
-        final Throwable thrown = catchThrowable(constructor::newInstance);
-
-        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(constructor::newInstance).hasCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     @ParameterizedTest
     @MethodSource("wireHits")
-    <E extends Enum<E>> void fromWire_shouldReturnConstant_whenWireMatches(
+    <E extends Enum<E>> void fromWire_whenWireMatches_shouldReturnConstant(
             final String wire, final Class<E> enumClass, final Function<E, String> wireValue, final E expected) {
         final Optional<E> resolved = EnumUtils.fromWire(wire, enumClass, wireValue);
 
@@ -34,7 +32,7 @@ class EnumUtilsTest {
     }
 
     @Test
-    void fromWire_shouldReturnConstant_whenLookupIsCached() {
+    void fromWire_whenLookupIsCached_shouldReturnConstant() {
         final String wire = "secret";
         final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
         final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
@@ -47,7 +45,7 @@ class EnumUtilsTest {
 
     @ParameterizedTest
     @MethodSource("wireMisses")
-    <E extends Enum<E>> void fromWire_shouldReturnEmpty_whenWireDoesNotMatch(
+    <E extends Enum<E>> void fromWire_whenWireDoesNotMatch_shouldReturnEmpty(
             final String wire, final Class<E> enumClass, final Function<E, String> wireValue) {
         final Optional<E> resolved = EnumUtils.fromWire(wire, enumClass, wireValue);
 
@@ -55,36 +53,36 @@ class EnumUtilsTest {
     }
 
     @Test
-    void fromWire_shouldThrow_whenValueNull() {
+    void fromWire_whenValueNull_shouldThrow() {
         final String value = null;
         final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
         final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
 
-        final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire(value, enumClass, wireValue));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("value must not be null");
+        assertThatThrownBy(() -> EnumUtils.fromWire(value, enumClass, wireValue))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("value must not be null");
     }
 
     @Test
-    void fromWire_shouldThrow_whenEnumClassNull() {
+    void fromWire_whenEnumClassNull_shouldThrow() {
         final String value = "secret";
         final Class<SampleWireEnum> enumClass = null;
         final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
 
-        final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire(value, enumClass, wireValue));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("enumClass must not be null");
+        assertThatThrownBy(() -> EnumUtils.fromWire(value, enumClass, wireValue))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("enumClass must not be null");
     }
 
     @Test
-    void fromWire_shouldThrow_whenWireValueNull() {
+    void fromWire_whenWireValueNull_shouldThrow() {
         final String value = "secret";
         final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
         final Function<SampleWireEnum, String> wireValue = null;
 
-        final Throwable thrown = catchThrowable(() -> EnumUtils.fromWire(value, enumClass, wireValue));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("wireValue must not be null");
+        assertThatThrownBy(() -> EnumUtils.fromWire(value, enumClass, wireValue))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("wireValue must not be null");
     }
 
     private static Stream<Arguments> wireHits() {
