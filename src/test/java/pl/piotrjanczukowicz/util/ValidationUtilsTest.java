@@ -1,7 +1,8 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.lang.reflect.Constructor;
 import java.time.Duration;
@@ -16,25 +17,23 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ValidationUtilsTest {
 
     @Test
-    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
+    void constructor_whenInstantiatedViaReflection_shouldThrow() throws Exception {
         final Constructor<ValidationUtils> constructor = ValidationUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
 
-        final Throwable thrown = catchThrowable(constructor::newInstance);
-
-        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(constructor::newInstance).hasCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     @ParameterizedTest
     @MethodSource("nonPositiveDurations")
-    void isPositive_shouldReturnFalse_whenNullOrNotPositive(final Duration duration) {
+    void isPositive_whenNullOrNotPositive_shouldReturnFalse(final Duration duration) {
         final boolean positive = ValidationUtils.isPositive(duration);
 
         assertThat(positive).isFalse();
     }
 
     @Test
-    void isPositive_shouldReturnTrue_whenDurationPositive() {
+    void isPositive_whenDurationPositive_shouldReturnTrue() {
         final Duration duration = Duration.ofMillis(1);
 
         final boolean positive = ValidationUtils.isPositive(duration);
@@ -44,14 +43,14 @@ class ValidationUtilsTest {
 
     @ParameterizedTest
     @MethodSource("nonPositiveDurations")
-    void isNonPositive_shouldReturnTrue_whenNullOrNotPositive(final Duration duration) {
+    void isNonPositive_whenNullOrNotPositive_shouldReturnTrue(final Duration duration) {
         final boolean nonPositive = ValidationUtils.isNonPositive(duration);
 
         assertThat(nonPositive).isTrue();
     }
 
     @Test
-    void isNonPositive_shouldReturnFalse_whenDurationPositive() {
+    void isNonPositive_whenDurationPositive_shouldReturnFalse() {
         final Duration duration = Duration.ofMillis(1);
 
         final boolean nonPositive = ValidationUtils.isNonPositive(duration);
@@ -60,7 +59,7 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireAtMost_shouldReturnValue_whenWithinMaximum() {
+    void requireAtMost_whenWithinMaximum_shouldReturnValue() {
         final int value = 100;
         final int maximum = 100;
         final String message = "perPage must be at most 100";
@@ -71,18 +70,18 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireAtMost_shouldThrow_whenValueExceedsMaximum() {
+    void requireAtMost_whenValueExceedsMaximum_shouldThrow() {
         final int value = 101;
         final int maximum = 100;
         final String message = "perPage must be at most 100";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtMost(value, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireAtMost(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireAtLeast_shouldReturnValue_whenWithinMinimum() {
+    void requireAtLeast_whenWithinMinimum_shouldReturnValue() {
         final double value = 0.0;
         final double minimum = 0.0;
         final String message = "percentage must be at least 0";
@@ -93,18 +92,18 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireAtLeast_shouldThrow_whenValueBelowMinimum() {
+    void requireAtLeast_whenValueBelowMinimum_shouldThrow() {
         final double value = -1.0;
         final double minimum = 0.0;
         final String message = "percentage must be at least 0";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtLeast(value, minimum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireAtLeast(value, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireAtMost_shouldReturnValue_whenWithinMaximumForDouble() {
+    void requireAtMost_whenWithinMaximumForDouble_shouldReturnValue() {
         final double value = 100.0;
         final double maximum = 100.0;
         final String message = "percentage must be at most 100";
@@ -115,40 +114,40 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireAtMost_shouldThrow_whenDoubleValueExceedsMaximum() {
+    void requireAtMost_whenDoubleValueExceedsMaximum_shouldThrow() {
         final double value = 101.0;
         final double maximum = 100.0;
         final String message = "percentage must be at most 100";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtMost(value, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireAtMost(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireAtMost_shouldThrow_whenDoubleValueIsNaN() {
+    void requireAtMost_whenDoubleValueIsNaN_shouldThrow() {
         final double value = Double.NaN;
         final double maximum = 100.0;
         final String message = "percentage must be at most 100";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtMost(value, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireAtMost(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireAtMost_shouldThrow_whenDoubleValueIsInfinite() {
+    void requireAtMost_whenDoubleValueIsInfinite_shouldThrow() {
         final double value = Double.POSITIVE_INFINITY;
         final double maximum = 100.0;
         final String message = "percentage must be at most 100";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtMost(value, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireAtMost(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireBetween_shouldReturnValue_whenWithinBounds() {
+    void requireBetween_whenWithinBounds_shouldReturnValue() {
         final double value = 50.0;
         final double minimum = 0.0;
         final double maximum = 100.0;
@@ -160,55 +159,55 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireBetween_shouldThrow_whenValueBelowMinimum() {
+    void requireBetween_whenValueBelowMinimum_shouldThrow() {
         final double value = -1.0;
         final double minimum = 0.0;
         final double maximum = 100.0;
         final String message = "percentage must be between 0 and 100";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireBetween(value, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireBetween(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireBetween_shouldThrow_whenValueAboveMaximum() {
+    void requireBetween_whenValueAboveMaximum_shouldThrow() {
         final double value = 101.0;
         final double minimum = 0.0;
         final double maximum = 100.0;
         final String message = "percentage must be between 0 and 100";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireBetween(value, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireBetween(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireBetween_shouldThrow_whenValueIsNaN() {
+    void requireBetween_whenValueIsNaN_shouldThrow() {
         final double value = Double.NaN;
         final double minimum = 0.0;
         final double maximum = 100.0;
         final String message = "percentage must be between 0 and 100";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireBetween(value, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireBetween(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireBetween_shouldThrow_whenValueIsInfinite() {
+    void requireBetween_whenValueIsInfinite_shouldThrow() {
         final double value = Double.POSITIVE_INFINITY;
         final double minimum = 0.0;
         final double maximum = 100.0;
         final String message = "percentage must be between 0 and 100";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireBetween(value, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireBetween(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireNotBlank_shouldReturnValue_whenNonBlank() {
+    void requireNotBlank_whenNonBlank_shouldReturnValue() {
         final String value = "token";
         final String message = "token must not be blank";
 
@@ -218,27 +217,27 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireNotBlank_shouldThrow_whenNull() {
+    void requireNotBlank_whenNull_shouldThrow() {
         final String value = null;
         final String message = "token must not be blank";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireNotBlank(value, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireNotBlank(value, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireNotBlank_shouldThrow_whenBlank() {
+    void requireNotBlank_whenBlank_shouldThrow() {
         final String value = "  ";
         final String message = "token must not be blank";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireNotBlank(value, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireNotBlank(value, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeAtMost_shouldReturnValue_whenWithinMaximum() {
+    void requireSizeAtMost_whenWithinMaximum_shouldReturnValue() {
         final List<String> values = List.of("a", "b");
         final int maximum = 2;
         final String message = "items must contain at most 2 entries";
@@ -249,18 +248,18 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireSizeAtMost_shouldThrow_whenSizeExceedsMaximum() {
+    void requireSizeAtMost_whenSizeExceedsMaximum_shouldThrow() {
         final List<String> values = List.of("a", "b", "c");
         final int maximum = 2;
         final String message = "items must contain at most 2 entries";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeAtMost(values, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeAtMost(values, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeAtLeast_shouldReturnValue_whenWithinMinimum() {
+    void requireSizeAtLeast_whenWithinMinimum_shouldReturnValue() {
         final List<String> values = List.of("a", "b");
         final int minimum = 2;
         final String message = "items must contain at least 2 entries";
@@ -271,18 +270,18 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireSizeAtLeast_shouldThrow_whenSizeBelowMinimum() {
+    void requireSizeAtLeast_whenSizeBelowMinimum_shouldThrow() {
         final List<String> values = List.of("a");
         final int minimum = 2;
         final String message = "items must contain at least 2 entries";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeAtLeast(values, minimum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeAtLeast(values, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeExactly_shouldReturnValue_whenSizeMatches() {
+    void requireSizeExactly_whenSizeMatches_shouldReturnValue() {
         final List<String> values = List.of("a");
         final int size = 1;
         final String message = "items must contain exactly 1 entry";
@@ -293,29 +292,29 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireSizeExactly_shouldThrow_whenNull() {
+    void requireSizeExactly_whenNull_shouldThrow() {
         final List<String> values = null;
         final int size = 1;
         final String message = "items must contain exactly 1 entry";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeExactly(values, size, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeExactly(values, size, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeExactly_shouldThrow_whenSizeDiffers() {
+    void requireSizeExactly_whenSizeDiffers_shouldThrow() {
         final List<String> values = List.of("a", "b");
         final int size = 1;
         final String message = "items must contain exactly 1 entry";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeExactly(values, size, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeExactly(values, size, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeBetween_shouldReturnValue_whenWithinBounds() {
+    void requireSizeBetween_whenWithinBounds_shouldReturnValue() {
         final List<String> values = List.of("a", "b");
         final int minimum = 2;
         final int maximum = 100;
@@ -327,46 +326,43 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireSizeBetween_shouldThrow_whenNull() {
+    void requireSizeBetween_whenNull_shouldThrow() {
         final List<String> values = null;
         final int minimum = 2;
         final int maximum = 100;
         final String message = "items must contain between 2 and 100 entries";
 
-        final Throwable thrown =
-                catchThrowable(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeBetween_shouldThrow_whenSizeBelowMinimum() {
+    void requireSizeBetween_whenSizeBelowMinimum_shouldThrow() {
         final List<String> values = List.of("a");
         final int minimum = 2;
         final int maximum = 100;
         final String message = "items must contain between 2 and 100 entries";
 
-        final Throwable thrown =
-                catchThrowable(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeBetween_shouldThrow_whenSizeExceedsMaximum() {
+    void requireSizeBetween_whenSizeExceedsMaximum_shouldThrow() {
         final List<String> values = List.of("a", "b", "c");
         final int minimum = 1;
         final int maximum = 2;
         final String message = "items must contain between 1 and 2 entries";
 
-        final Throwable thrown =
-                catchThrowable(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireMaxLength_shouldReturnValue_whenWithinMaximum() {
+    void requireMaxLength_whenWithinMaximum_shouldReturnValue() {
         final String value = "hi";
         final int maximum = 2;
         final String message = "summary must be at most 2 characters";
@@ -377,18 +373,18 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireMaxLength_shouldThrow_whenLongerThanMaximum() {
+    void requireMaxLength_whenLongerThanMaximum_shouldThrow() {
         final String value = "hey";
         final int maximum = 2;
         final String message = "summary must be at most 2 characters";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireMaxLength(value, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireMaxLength(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireMaxLengthIfPresent_shouldReturnValue_whenWithinMaximum() {
+    void requireMaxLengthIfPresent_whenWithinMaximum_shouldReturnValue() {
         final String value = "hi";
         final int maximum = 2;
         final String message = "summary must be at most 2 characters";
@@ -399,19 +395,18 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireMaxLengthIfPresent_shouldThrow_whenLongerThanMaximum() {
+    void requireMaxLengthIfPresent_whenLongerThanMaximum_shouldThrow() {
         final String value = "hey";
         final int maximum = 2;
         final String message = "summary must be at most 2 characters";
 
-        final Throwable thrown =
-                catchThrowable(() -> ValidationUtils.requireMaxLengthIfPresent(value, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireMaxLengthIfPresent(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireMatches_shouldReturnValue_whenPatternMatches() {
+    void requireMatches_whenPatternMatches_shouldReturnValue() {
         final String value = "ssh-rsa AAA";
         final Pattern pattern = Pattern.compile("^ssh-rsa ");
         final String message = "key must be an ssh-rsa public key";
@@ -422,18 +417,18 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireMatches_shouldThrow_whenPatternDoesNotMatch() {
+    void requireMatches_whenPatternDoesNotMatch_shouldThrow() {
         final String value = "not-a-key";
         final Pattern pattern = Pattern.compile("^ssh-rsa ");
         final String message = "key must be an ssh-rsa public key";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireMatches(value, pattern, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireMatches(value, pattern, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requirePositive_shouldReturnDuration_whenPositive() {
+    void requirePositive_whenPositive_shouldReturnDuration() {
         final Duration duration = Duration.ofMillis(1);
         final String message = "timeout must be positive";
 
@@ -443,28 +438,28 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requirePositive_shouldThrow_whenNull() {
+    void requirePositive_whenNull_shouldThrow() {
         final Duration duration = null;
         final String message = "timeout must be positive";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requirePositive(duration, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requirePositive(duration, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @ParameterizedTest
     @MethodSource("zeroAndNegativeDurations")
-    void requirePositive_shouldThrow_whenZeroOrNegative(final Duration duration) {
+    void requirePositive_whenZeroOrNegative_shouldThrow(final Duration duration) {
         final String message = "timeout must be positive";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requirePositive(duration, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requirePositive(duration, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @ParameterizedTest
     @MethodSource("zeroAndPositiveDurations")
-    void requireNonNegative_shouldReturnDuration_whenZeroOrPositive(final Duration duration) {
+    void requireNonNegative_whenZeroOrPositive_shouldReturnDuration(final Duration duration) {
         final String message = "delay must not be negative";
 
         final Duration result = ValidationUtils.requireNonNegative(duration, message);
@@ -473,27 +468,27 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireNonNegative_shouldThrow_whenNull() {
+    void requireNonNegative_whenNull_shouldThrow() {
         final Duration duration = null;
         final String message = "delay must not be negative";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireNonNegative(duration, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireNonNegative(duration, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireNonNegative_shouldThrow_whenNegative() {
+    void requireNonNegative_whenNegative_shouldThrow() {
         final Duration duration = Duration.ofSeconds(-1);
         final String message = "delay must not be negative";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireNonNegative(duration, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireNonNegative(duration, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireAtLeast_shouldReturnInt_whenWithinMinimum() {
+    void requireAtLeast_whenWithinMinimum_shouldReturnInt() {
         final int value = 2;
         final int minimum = 2;
         final String message = "count must be at least 2";
@@ -504,84 +499,83 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireAtLeast_shouldThrow_whenIntBelowMinimum() {
+    void requireAtLeast_whenIntBelowMinimum_shouldThrow() {
         final int value = 1;
         final int minimum = 2;
         final String message = "count must be at least 2";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtLeast(value, minimum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireAtLeast(value, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireAtLeast_shouldThrow_whenDoubleValueIsNaN() {
+    void requireAtLeast_whenDoubleValueIsNaN_shouldThrow() {
         final double value = Double.NaN;
         final double minimum = 0.0;
         final String message = "percentage must be at least 0";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtLeast(value, minimum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireAtLeast(value, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireAtLeast_shouldThrow_whenDoubleValueIsInfinite() {
+    void requireAtLeast_whenDoubleValueIsInfinite_shouldThrow() {
         final double value = Double.NEGATIVE_INFINITY;
         final double minimum = 0.0;
         final String message = "percentage must be at least 0";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtLeast(value, minimum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireAtLeast(value, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireGreaterOrEqual_shouldPass_whenValueAtLeastMinimum() {
+    void requireGreaterOrEqual_whenValueAtLeastMinimum_shouldPass() {
         final Duration value = Duration.ofSeconds(2);
         final Duration minimum = Duration.ofSeconds(2);
         final String message = "wait must be at least PT2S";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, message));
-
-        assertThat(thrown).isNull();
+        assertThatCode(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, message))
+                .doesNotThrowAnyException();
     }
 
     @Test
-    void requireGreaterOrEqual_shouldThrow_whenValueBelowMinimum() {
+    void requireGreaterOrEqual_whenValueBelowMinimum_shouldThrow() {
         final Duration value = Duration.ofSeconds(1);
         final Duration minimum = Duration.ofSeconds(2);
         final String message = "wait must be at least PT2S";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireGreaterOrEqual_shouldThrow_whenValueNull() {
+    void requireGreaterOrEqual_whenValueNull_shouldThrow() {
         final Duration value = null;
         final Duration minimum = Duration.ZERO;
         final String message = "wait must be at least PT0S";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireGreaterOrEqual_shouldThrow_whenMinimumNull() {
+    void requireGreaterOrEqual_whenMinimumNull_shouldThrow() {
         final Duration value = Duration.ZERO;
         final Duration minimum = null;
         final String message = "wait must be at least PT0S";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("minimum must not be null");
+        assertThatThrownBy(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("minimum must not be null");
     }
 
     @Test
-    void requireNonEmpty_shouldReturnValue_whenNonEmpty() {
+    void requireNonEmpty_whenNonEmpty_shouldReturnValue() {
         final List<String> values = List.of("a");
         final String message = "items must not be empty";
 
@@ -591,49 +585,49 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireNonEmpty_shouldThrow_whenEmpty() {
+    void requireNonEmpty_whenEmpty_shouldThrow() {
         final List<String> values = List.of();
         final String message = "items must not be empty";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireNonEmpty(values, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireNonEmpty(values, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireNonEmpty_shouldThrow_whenNull() {
+    void requireNonEmpty_whenNull_shouldThrow() {
         final List<String> values = null;
         final String message = "items must not be empty";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireNonEmpty(values, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireNonEmpty(values, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeAtMost_shouldThrow_whenNull() {
+    void requireSizeAtMost_whenNull_shouldThrow() {
         final List<String> values = null;
         final int maximum = 2;
         final String message = "items must contain at most 2 entries";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeAtMost(values, maximum, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeAtMost(values, maximum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeAtLeast_shouldThrow_whenNull() {
+    void requireSizeAtLeast_whenNull_shouldThrow() {
         final List<String> values = null;
         final int minimum = 1;
         final String message = "items must contain at least 1 entry";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeAtLeast(values, minimum, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeAtLeast(values, minimum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireUniqueItems_shouldReturnValue_whenUnique() {
+    void requireUniqueItems_whenUnique_shouldReturnValue() {
         final List<String> values = List.of("a", "b");
         final String message = "items must not contain duplicates";
 
@@ -643,27 +637,27 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireUniqueItems_shouldThrow_whenDuplicates() {
+    void requireUniqueItems_whenDuplicates_shouldThrow() {
         final List<String> values = List.of("a", "a");
         final String message = "items must not contain duplicates";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireUniqueItems(values, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireUniqueItems(values, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireUniqueItems_shouldThrow_whenNull() {
+    void requireUniqueItems_whenNull_shouldThrow() {
         final List<String> values = null;
         final String message = "items must not contain duplicates";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireUniqueItems(values, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireUniqueItems(values, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireNonEmpty_shouldReturnMap_whenNonEmpty() {
+    void requireNonEmpty_whenNonEmpty_shouldReturnMap() {
         final Map<String, String> values = Map.of("a", "1");
         final String message = "props must not be empty";
 
@@ -673,27 +667,27 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireNonEmpty_shouldThrow_whenMapEmpty() {
+    void requireNonEmpty_whenMapEmpty_shouldThrow() {
         final Map<String, String> values = Map.of();
         final String message = "props must not be empty";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireNonEmpty(values, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireNonEmpty(values, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireNonEmpty_shouldThrow_whenMapNull() {
+    void requireNonEmpty_whenMapNull_shouldThrow() {
         final Map<String, String> values = null;
         final String message = "props must not be empty";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireNonEmpty(values, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireNonEmpty(values, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeAtMost_shouldReturnMap_whenWithinMaximum() {
+    void requireSizeAtMost_whenWithinMaximum_shouldReturnMap() {
         final Map<String, String> values = Map.of("a", "1");
         final int maximum = 1;
         final String message = "props must contain at most 1 property";
@@ -704,29 +698,29 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireSizeAtMost_shouldThrow_whenMapSizeExceedsMaximum() {
+    void requireSizeAtMost_whenMapSizeExceedsMaximum_shouldThrow() {
         final Map<String, String> values = Map.of("a", "1", "b", "2");
         final int maximum = 1;
         final String message = "props must contain at most 1 property";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeAtMost(values, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeAtMost(values, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeAtMost_shouldThrow_whenMapNull() {
+    void requireSizeAtMost_whenMapNull_shouldThrow() {
         final Map<String, String> values = null;
         final int maximum = 1;
         final String message = "props must contain at most 1 property";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeAtMost(values, maximum, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeAtMost(values, maximum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeAtLeast_shouldReturnMap_whenWithinMinimum() {
+    void requireSizeAtLeast_whenWithinMinimum_shouldReturnMap() {
         final Map<String, String> values = Map.of("a", "1", "b", "2");
         final int minimum = 2;
         final String message = "props must contain at least 2 properties";
@@ -737,29 +731,29 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireSizeAtLeast_shouldThrow_whenMapSizeBelowMinimum() {
+    void requireSizeAtLeast_whenMapSizeBelowMinimum_shouldThrow() {
         final Map<String, String> values = Map.of("a", "1");
         final int minimum = 2;
         final String message = "props must contain at least 2 properties";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeAtLeast(values, minimum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeAtLeast(values, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeAtLeast_shouldThrow_whenMapNull() {
+    void requireSizeAtLeast_whenMapNull_shouldThrow() {
         final Map<String, String> values = null;
         final int minimum = 1;
         final String message = "props must contain at least 1 property";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeAtLeast(values, minimum, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeAtLeast(values, minimum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeExactly_shouldReturnMap_whenSizeMatches() {
+    void requireSizeExactly_whenSizeMatches_shouldReturnMap() {
         final Map<String, String> values = Map.of("a", "1");
         final int size = 1;
         final String message = "props must contain exactly 1 property";
@@ -770,29 +764,29 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireSizeExactly_shouldThrow_whenMapNull() {
+    void requireSizeExactly_whenMapNull_shouldThrow() {
         final Map<String, String> values = null;
         final int size = 1;
         final String message = "props must contain exactly 1 property";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeExactly(values, size, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeExactly(values, size, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeExactly_shouldThrow_whenMapSizeDiffers() {
+    void requireSizeExactly_whenMapSizeDiffers_shouldThrow() {
         final Map<String, String> values = Map.of("a", "1", "b", "2");
         final int size = 1;
         final String message = "props must contain exactly 1 property";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireSizeExactly(values, size, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeExactly(values, size, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeBetween_shouldReturnMap_whenWithinBounds() {
+    void requireSizeBetween_whenWithinBounds_shouldReturnMap() {
         final Map<String, String> values = Map.of("a", "1", "b", "2");
         final int minimum = 2;
         final int maximum = 100;
@@ -804,46 +798,43 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireSizeBetween_shouldThrow_whenMapNull() {
+    void requireSizeBetween_whenMapNull_shouldThrow() {
         final Map<String, String> values = null;
         final int minimum = 2;
         final int maximum = 100;
         final String message = "props must contain between 2 and 100 properties";
 
-        final Throwable thrown =
-                catchThrowable(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeBetween_shouldThrow_whenMapSizeBelowMinimum() {
+    void requireSizeBetween_whenMapSizeBelowMinimum_shouldThrow() {
         final Map<String, String> values = Map.of("a", "1");
         final int minimum = 2;
         final int maximum = 100;
         final String message = "props must contain between 2 and 100 properties";
 
-        final Throwable thrown =
-                catchThrowable(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireSizeBetween_shouldThrow_whenMapSizeExceedsMaximum() {
+    void requireSizeBetween_whenMapSizeExceedsMaximum_shouldThrow() {
         final Map<String, String> values = Map.of("a", "1", "b", "2", "c", "3");
         final int minimum = 1;
         final int maximum = 2;
         final String message = "props must contain between 1 and 2 properties";
 
-        final Throwable thrown =
-                catchThrowable(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message));
-
-        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireMaxLengthIfPresent_shouldReturnNull_whenValueNull() {
+    void requireMaxLengthIfPresent_whenValueNull_shouldReturnNull() {
         final String value = null;
         final int maximum = 2;
         final String message = "summary must be at most 2 characters";
@@ -854,25 +845,25 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireMatches_shouldThrow_whenValueNull() {
+    void requireMatches_whenValueNull_shouldThrow() {
         final String value = null;
-        final Pattern pattern = Pattern.compile(".");
+        final Pattern pattern = Pattern.compile("^ssh-rsa ");
         final String message = "key must be an ssh-rsa public key";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireMatches(value, pattern, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage(message);
+        assertThatThrownBy(() -> ValidationUtils.requireMatches(value, pattern, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
     }
 
     @Test
-    void requireMatches_shouldThrow_whenPatternNull() {
+    void requireMatches_whenPatternNull_shouldThrow() {
         final String value = "ssh-rsa AAA";
         final Pattern pattern = null;
         final String message = "key must be an ssh-rsa public key";
 
-        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireMatches(value, pattern, message));
-
-        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("pattern must not be null");
+        assertThatThrownBy(() -> ValidationUtils.requireMatches(value, pattern, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("pattern must not be null");
     }
 
     private static Stream<Duration> nonPositiveDurations() {
