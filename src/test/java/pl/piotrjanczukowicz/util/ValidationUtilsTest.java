@@ -209,9 +209,9 @@ class ValidationUtilsTest {
     @Test
     void requireNonNull_whenNonNull_shouldReturnValue() {
         final String value = "token";
-        final String message = "token must not be null";
+        final String fieldName = "token";
 
-        final String result = ValidationUtils.requireNonNull(value, message);
+        final String result = ValidationUtils.requireNonNull(value, fieldName);
 
         assertThat(result).isSameAs(value);
     }
@@ -219,11 +219,11 @@ class ValidationUtilsTest {
     @Test
     void requireNonNull_whenNull_shouldThrow() {
         final String value = null;
-        final String message = "token must not be null";
+        final String fieldName = "token";
 
-        assertThatThrownBy(() -> ValidationUtils.requireNonNull(value, message))
+        assertThatThrownBy(() -> ValidationUtils.requireNonNull(value, fieldName))
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage(message);
+                .hasMessage(fieldName + " must not be null");
     }
 
     @Test
