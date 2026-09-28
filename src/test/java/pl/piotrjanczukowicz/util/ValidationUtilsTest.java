@@ -207,6 +207,26 @@ class ValidationUtilsTest {
     }
 
     @Test
+    void requireNonNull_whenNonNull_shouldReturnValue() {
+        final String value = "token";
+        final String message = "token must not be null";
+
+        final String result = ValidationUtils.requireNonNull(value, message);
+
+        assertThat(result).isSameAs(value);
+    }
+
+    @Test
+    void requireNonNull_whenNull_shouldThrow() {
+        final String value = null;
+        final String message = "token must not be null";
+
+        assertThatThrownBy(() -> ValidationUtils.requireNonNull(value, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
+    }
+
+    @Test
     void requireNotBlank_whenNonBlank_shouldReturnValue() {
         final String value = "token";
         final String message = "token must not be blank";

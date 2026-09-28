@@ -24,6 +24,22 @@ public final class ValidationUtils {
     }
 
     /**
+     * Requires {@code value} to be non-null.
+     *
+     * @param value value to check
+     * @param message exception text
+     * @param <T> value type
+     * @return {@code value}
+     * @throws NullPointerException if {@code value} is {@code null}
+     */
+    @SuppressFBWarnings(
+            value = "NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE",
+            justification = "null is rejected with NullPointerException")
+    public static <T> T requireNonNull(@Nullable final T value, final String message) {
+        return Objects.requireNonNull(value, message);
+    }
+
+    /**
      * Requires {@code value} to be non-null and not blank.
      *
      * <p>Blank follows {@link String#isBlank()}: empty or only Unicode whitespace. Surrounding whitespace is not
