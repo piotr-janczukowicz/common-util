@@ -63,6 +63,24 @@ public final class ValidationUtils {
     }
 
     /**
+     * Requires {@code value} to be not blank when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with
+     * {@link #requireNotBlank(String, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is blank
+     */
+    public static @Nullable String requireNotBlankIfPresent(@Nullable final String value, final String message) {
+        if (value != null) {
+            requireNotBlank(value, message);
+        }
+        return value;
+    }
+
+    /**
      * Requires {@code duration} to be strictly positive.
      *
      * @param duration duration to check
@@ -115,6 +133,22 @@ public final class ValidationUtils {
     }
 
     /**
+     * Requires {@code value} to be at least {@code minimum}.
+     *
+     * @param value value to check
+     * @param minimum inclusive lower bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is below {@code minimum}
+     */
+    public static long requireAtLeast(final long value, final long minimum, final String message) {
+        if (value < minimum) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    /**
      * Requires {@code value} to be finite and at least {@code minimum}.
      *
      * <p>The lower bound is inclusive. {@link Double#NaN}, infinities, and values below {@code minimum} fail. Finite is
@@ -137,6 +171,66 @@ public final class ValidationUtils {
     }
 
     /**
+     * Requires {@code value} to be at least {@code minimum} when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireAtLeast(int,
+     * int, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param minimum inclusive lower bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is below {@code minimum}
+     */
+    public static @Nullable Integer requireAtLeastIfPresent(
+            @Nullable final Integer value, final int minimum, final String message) {
+        if (value != null) {
+            requireAtLeast(value, minimum, message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be at least {@code minimum} when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireAtLeast(long,
+     * long, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param minimum inclusive lower bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is below {@code minimum}
+     */
+    public static @Nullable Long requireAtLeastIfPresent(
+            @Nullable final Long value, final long minimum, final String message) {
+        if (value != null) {
+            requireAtLeast(value, minimum, message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be finite and at least {@code minimum} when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireAtLeast(double,
+     * double, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param minimum inclusive lower bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is non-finite or below {@code minimum}
+     */
+    public static @Nullable Double requireAtLeastIfPresent(
+            @Nullable final Double value, final double minimum, final String message) {
+        if (value != null) {
+            requireAtLeast(value, minimum, message);
+        }
+        return value;
+    }
+
+    /**
      * Requires {@code value} to be at most {@code maximum}.
      *
      * @param value value to check
@@ -146,6 +240,22 @@ public final class ValidationUtils {
      * @throws IllegalArgumentException if {@code value} is above {@code maximum}
      */
     public static int requireAtMost(final int value, final int maximum, final String message) {
+        if (value > maximum) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be at most {@code maximum}.
+     *
+     * @param value value to check
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is above {@code maximum}
+     */
+    public static long requireAtMost(final long value, final long maximum, final String message) {
         if (value > maximum) {
             throw new IllegalArgumentException(message);
         }
@@ -172,6 +282,96 @@ public final class ValidationUtils {
     }
 
     /**
+     * Requires {@code value} to be at most {@code maximum} when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireAtMost(int,
+     * int, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is above {@code maximum}
+     */
+    public static @Nullable Integer requireAtMostIfPresent(
+            @Nullable final Integer value, final int maximum, final String message) {
+        if (value != null) {
+            requireAtMost(value, maximum, message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be at most {@code maximum} when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireAtMost(long,
+     * long, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is above {@code maximum}
+     */
+    public static @Nullable Long requireAtMostIfPresent(
+            @Nullable final Long value, final long maximum, final String message) {
+        if (value != null) {
+            requireAtMost(value, maximum, message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be finite and at most {@code maximum} when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireAtMost(double,
+     * double, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is non-finite or above {@code maximum}
+     */
+    public static @Nullable Double requireAtMostIfPresent(
+            @Nullable final Double value, final double maximum, final String message) {
+        if (value != null) {
+            requireAtMost(value, maximum, message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be within {@code minimum} and {@code maximum}, inclusive.
+     *
+     * @param value value to check
+     * @param minimum inclusive lower bound
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is outside the range
+     */
+    public static int requireBetween(final int value, final int minimum, final int maximum, final String message) {
+        requireAtLeast(value, minimum, message);
+        return requireAtMost(value, maximum, message);
+    }
+
+    /**
+     * Requires {@code value} to be within {@code minimum} and {@code maximum}, inclusive.
+     *
+     * @param value value to check
+     * @param minimum inclusive lower bound
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is outside the range
+     */
+    public static long requireBetween(final long value, final long minimum, final long maximum, final String message) {
+        requireAtLeast(value, minimum, message);
+        return requireAtMost(value, maximum, message);
+    }
+
+    /**
      * Requires {@code value} to be finite and within {@code minimum} and {@code maximum}, inclusive.
      *
      * @param value value to check
@@ -185,6 +385,70 @@ public final class ValidationUtils {
             final double value, final double minimum, final double maximum, final String message) {
         requireAtLeast(value, minimum, message);
         return requireAtMost(value, maximum, message);
+    }
+
+    /**
+     * Requires {@code value} to be within {@code minimum} and {@code maximum}, inclusive, when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireBetween(int,
+     * int, int, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param minimum inclusive lower bound
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is outside the range
+     */
+    public static @Nullable Integer requireBetweenIfPresent(
+            @Nullable final Integer value, final int minimum, final int maximum, final String message) {
+        if (value != null) {
+            requireBetween(value, minimum, maximum, message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be within {@code minimum} and {@code maximum}, inclusive, when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireBetween(long,
+     * long, long, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param minimum inclusive lower bound
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is outside the range
+     */
+    public static @Nullable Long requireBetweenIfPresent(
+            @Nullable final Long value, final long minimum, final long maximum, final String message) {
+        if (value != null) {
+            requireBetween(value, minimum, maximum, message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be finite and within {@code minimum} and {@code maximum}, inclusive, when it is
+     * non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireBetween(double,
+     * double, double, String)}.
+     *
+     * @param value value to check, or {@code null}
+     * @param minimum inclusive lower bound
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is non-finite or outside the range
+     */
+    public static @Nullable Double requireBetweenIfPresent(
+            @Nullable final Double value, final double minimum, final double maximum, final String message) {
+        if (value != null) {
+            requireBetween(value, minimum, maximum, message);
+        }
+        return value;
     }
 
     /**
@@ -482,6 +746,47 @@ public final class ValidationUtils {
     }
 
     /**
+     * Requires {@code value} to have length at least {@code min}.
+     *
+     * <p>Length is {@link String#length()} (UTF-16 code units), not Unicode code points. The minimum is inclusive.
+     *
+     * @param value string to check
+     * @param min inclusive minimum length
+     * @param message exception text
+     * @return {@code value}
+     * @throws NullPointerException if {@code value} is {@code null}
+     * @throws IllegalArgumentException if {@code value} is shorter than {@code min}
+     */
+    public static String requireMinLength(final String value, final int min, final String message) {
+        Objects.requireNonNull(value, message);
+
+        if (value.length() < min) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to have length at least {@code min} when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with
+     * {@link #requireMinLength(String, int, String)}.
+     *
+     * @param value string to check, or {@code null}
+     * @param min inclusive minimum length
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is shorter than {@code min}
+     */
+    public static @Nullable String requireMinLengthIfPresent(
+            @Nullable final String value, final int min, final String message) {
+        if (value != null) {
+            requireMinLength(value, min, message);
+        }
+        return value;
+    }
+
+    /**
      * Requires {@code value} to match {@code pattern}.
      *
      * <p>Matching uses {@link java.util.regex.Matcher#find()}, so a substring match succeeds; the pattern does not have
@@ -500,6 +805,27 @@ public final class ValidationUtils {
 
         if (!pattern.matcher(value).find()) {
             throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to match {@code pattern} when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireMatches(String,
+     * Pattern, String)}.
+     *
+     * @param value string to check, or {@code null}
+     * @param pattern regex applied with {@link java.util.regex.Matcher#find()}
+     * @param message exception text
+     * @return {@code value}
+     * @throws NullPointerException if {@code value} is present and {@code pattern} is {@code null}
+     * @throws IllegalArgumentException if {@code value} does not match {@code pattern}
+     */
+    public static @Nullable String requireMatchesIfPresent(
+            @Nullable final String value, final Pattern pattern, final String message) {
+        if (value != null) {
+            requireMatches(value, pattern, message);
         }
         return value;
     }

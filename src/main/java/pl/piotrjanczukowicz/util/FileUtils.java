@@ -54,7 +54,7 @@ public final class FileUtils {
         Objects.requireNonNull(type, "type must not be null");
         requireNotBlank(fileName, "fileName must not be blank");
 
-        try (final InputStream stream = type.getResourceAsStream(fileName)) {
+        try (InputStream stream = type.getResourceAsStream(fileName)) {
             if (stream == null) {
                 throw new IllegalStateException(
                         "Missing resource %s in package %s".formatted(fileName, type.getPackageName()));

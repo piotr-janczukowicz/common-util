@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,7 +17,7 @@ import java.util.stream.Stream;
  */
 public final class EnumUtils {
 
-    private static final ConcurrentHashMap<Class<? extends Enum<?>>, Map<String, ? extends Enum<?>>> BY_WIRE =
+    private static final ConcurrentMap<Class<? extends Enum<?>>, Map<String, ? extends Enum<?>>> BY_WIRE =
             new ConcurrentHashMap<>();
 
     private EnumUtils() {

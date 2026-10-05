@@ -865,6 +865,568 @@ class ValidationUtilsTest {
     }
 
     @Test
+    void requireMinLength_whenWithinMinimum_shouldReturnValue() {
+        final String value = "hi";
+        final int minLength = 2;
+        final String message = "summary must be at least 2 characters";
+
+        final String result = ValidationUtils.requireMinLength(value, minLength, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireMinLength_whenShorterThanMinimum_shouldThrow() {
+        final String value = "h";
+        final int minLength = 2;
+        final String message = "summary must be at least 2 characters";
+
+        assertThatThrownBy(() -> ValidationUtils.requireMinLength(value, minLength, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireMinLength_whenValueNull_shouldThrow() {
+        final String value = null;
+        final int minLength = 1;
+        final String message = "summary must be at least 1 character";
+
+        assertThatThrownBy(() -> ValidationUtils.requireMinLength(value, minLength, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireMinLengthIfPresent_whenWithinMinimum_shouldReturnValue() {
+        final String value = "hi";
+        final int minLength = 2;
+        final String message = "summary must be at least 2 characters";
+
+        final String result = ValidationUtils.requireMinLengthIfPresent(value, minLength, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireMinLengthIfPresent_whenShorterThanMinimum_shouldThrow() {
+        final String value = "h";
+        final int minLength = 2;
+        final String message = "summary must be at least 2 characters";
+
+        assertThatThrownBy(() -> ValidationUtils.requireMinLengthIfPresent(value, minLength, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireMinLengthIfPresent_whenValueNull_shouldReturnNull() {
+        final String value = null;
+        final int minLength = 2;
+        final String message = "summary must be at least 2 characters";
+
+        final String result = ValidationUtils.requireMinLengthIfPresent(value, minLength, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireMatchesIfPresent_whenPatternMatches_shouldReturnValue() {
+        final String value = "ssh-rsa AAA";
+        final Pattern pattern = Pattern.compile("^ssh-rsa ");
+        final String message = "key must be an ssh-rsa public key";
+
+        final String result = ValidationUtils.requireMatchesIfPresent(value, pattern, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireMatchesIfPresent_whenPatternDoesNotMatch_shouldThrow() {
+        final String value = "not-a-key";
+        final Pattern pattern = Pattern.compile("^ssh-rsa ");
+        final String message = "key must be an ssh-rsa public key";
+
+        assertThatThrownBy(() -> ValidationUtils.requireMatchesIfPresent(value, pattern, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireMatchesIfPresent_whenValueNull_shouldReturnNull() {
+        final String value = null;
+        final Pattern pattern = Pattern.compile("^ssh-rsa ");
+        final String message = "key must be an ssh-rsa public key";
+
+        final String result = ValidationUtils.requireMatchesIfPresent(value, pattern, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireMatchesIfPresent_whenValueNullAndPatternNull_shouldReturnNull() {
+        final String value = null;
+        final Pattern pattern = null;
+        final String message = "key must be an ssh-rsa public key";
+
+        final String result = ValidationUtils.requireMatchesIfPresent(value, pattern, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireNotBlankIfPresent_whenNonBlank_shouldReturnValue() {
+        final String value = "token";
+        final String message = "token must not be blank";
+
+        final String result = ValidationUtils.requireNotBlankIfPresent(value, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireNotBlankIfPresent_whenBlank_shouldThrow() {
+        final String value = "  ";
+        final String message = "token must not be blank";
+
+        assertThatThrownBy(() -> ValidationUtils.requireNotBlankIfPresent(value, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireNotBlankIfPresent_whenValueNull_shouldReturnNull() {
+        final String value = null;
+        final String message = "token must not be blank";
+
+        final String result = ValidationUtils.requireNotBlankIfPresent(value, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireAtLeast_whenWithinMinimum_shouldReturnLong() {
+        final long value = 2L;
+        final long minimum = 2L;
+        final String message = "id must be at least 2";
+
+        final long result = ValidationUtils.requireAtLeast(value, minimum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireAtLeast_whenLongBelowMinimum_shouldThrow() {
+        final long value = 1L;
+        final long minimum = 2L;
+        final String message = "id must be at least 2";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtLeast(value, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtMost_whenWithinMaximum_shouldReturnLong() {
+        final long value = 100L;
+        final long maximum = 100L;
+        final String message = "id must be at most 100";
+
+        final long result = ValidationUtils.requireAtMost(value, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireAtMost_whenLongExceedsMaximum_shouldThrow() {
+        final long value = 101L;
+        final long maximum = 100L;
+        final String message = "id must be at most 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtMost(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireBetween_whenWithinBounds_shouldReturnInt() {
+        final int value = 50;
+        final int minimum = 0;
+        final int maximum = 100;
+        final String message = "count must be between 0 and 100";
+
+        final int result = ValidationUtils.requireBetween(value, minimum, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireBetween_whenIntBelowMinimum_shouldThrow() {
+        final int value = -1;
+        final int minimum = 0;
+        final int maximum = 100;
+        final String message = "count must be between 0 and 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireBetween(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireBetween_whenIntAboveMaximum_shouldThrow() {
+        final int value = 101;
+        final int minimum = 0;
+        final int maximum = 100;
+        final String message = "count must be between 0 and 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireBetween(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireBetween_whenWithinBounds_shouldReturnLong() {
+        final long value = 50L;
+        final long minimum = 0L;
+        final long maximum = 100L;
+        final String message = "id must be between 0 and 100";
+
+        final long result = ValidationUtils.requireBetween(value, minimum, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireBetween_whenLongBelowMinimum_shouldThrow() {
+        final long value = -1L;
+        final long minimum = 0L;
+        final long maximum = 100L;
+        final String message = "id must be between 0 and 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireBetween(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireBetween_whenLongAboveMaximum_shouldThrow() {
+        final long value = 101L;
+        final long minimum = 0L;
+        final long maximum = 100L;
+        final String message = "id must be between 0 and 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireBetween(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtLeastIfPresent_whenIntegerWithinMinimum_shouldReturnValue() {
+        final Integer value = 2;
+        final int minimum = 2;
+        final String message = "count must be at least 2";
+
+        final Integer result = ValidationUtils.requireAtLeastIfPresent(value, minimum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireAtLeastIfPresent_whenIntegerBelowMinimum_shouldThrow() {
+        final Integer value = 1;
+        final int minimum = 2;
+        final String message = "count must be at least 2";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtLeastIfPresent(value, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtLeastIfPresent_whenIntegerNull_shouldReturnNull() {
+        final Integer value = null;
+        final int minimum = 2;
+        final String message = "count must be at least 2";
+
+        final Integer result = ValidationUtils.requireAtLeastIfPresent(value, minimum, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireAtLeastIfPresent_whenLongWithinMinimum_shouldReturnValue() {
+        final Long value = 2L;
+        final long minimum = 2L;
+        final String message = "id must be at least 2";
+
+        final Long result = ValidationUtils.requireAtLeastIfPresent(value, minimum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireAtLeastIfPresent_whenLongBelowMinimum_shouldThrow() {
+        final Long value = 1L;
+        final long minimum = 2L;
+        final String message = "id must be at least 2";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtLeastIfPresent(value, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtLeastIfPresent_whenLongNull_shouldReturnNull() {
+        final Long value = null;
+        final long minimum = 2L;
+        final String message = "id must be at least 2";
+
+        final Long result = ValidationUtils.requireAtLeastIfPresent(value, minimum, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireAtLeastIfPresent_whenDoubleWithinMinimum_shouldReturnValue() {
+        final Double value = 0.0;
+        final double minimum = 0.0;
+        final String message = "percentage must be at least 0";
+
+        final Double result = ValidationUtils.requireAtLeastIfPresent(value, minimum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireAtLeastIfPresent_whenDoubleBelowMinimum_shouldThrow() {
+        final Double value = -1.0;
+        final double minimum = 0.0;
+        final String message = "percentage must be at least 0";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtLeastIfPresent(value, minimum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtLeastIfPresent_whenDoubleNull_shouldReturnNull() {
+        final Double value = null;
+        final double minimum = 0.0;
+        final String message = "percentage must be at least 0";
+
+        final Double result = ValidationUtils.requireAtLeastIfPresent(value, minimum, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireAtMostIfPresent_whenIntegerWithinMaximum_shouldReturnValue() {
+        final Integer value = 100;
+        final int maximum = 100;
+        final String message = "count must be at most 100";
+
+        final Integer result = ValidationUtils.requireAtMostIfPresent(value, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireAtMostIfPresent_whenIntegerExceedsMaximum_shouldThrow() {
+        final Integer value = 101;
+        final int maximum = 100;
+        final String message = "count must be at most 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtMostIfPresent(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtMostIfPresent_whenIntegerNull_shouldReturnNull() {
+        final Integer value = null;
+        final int maximum = 100;
+        final String message = "count must be at most 100";
+
+        final Integer result = ValidationUtils.requireAtMostIfPresent(value, maximum, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireAtMostIfPresent_whenLongWithinMaximum_shouldReturnValue() {
+        final Long value = 100L;
+        final long maximum = 100L;
+        final String message = "id must be at most 100";
+
+        final Long result = ValidationUtils.requireAtMostIfPresent(value, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireAtMostIfPresent_whenLongExceedsMaximum_shouldThrow() {
+        final Long value = 101L;
+        final long maximum = 100L;
+        final String message = "id must be at most 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtMostIfPresent(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtMostIfPresent_whenLongNull_shouldReturnNull() {
+        final Long value = null;
+        final long maximum = 100L;
+        final String message = "id must be at most 100";
+
+        final Long result = ValidationUtils.requireAtMostIfPresent(value, maximum, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireAtMostIfPresent_whenDoubleWithinMaximum_shouldReturnValue() {
+        final Double value = 100.0;
+        final double maximum = 100.0;
+        final String message = "percentage must be at most 100";
+
+        final Double result = ValidationUtils.requireAtMostIfPresent(value, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireAtMostIfPresent_whenDoubleExceedsMaximum_shouldThrow() {
+        final Double value = 101.0;
+        final double maximum = 100.0;
+        final String message = "percentage must be at most 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtMostIfPresent(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtMostIfPresent_whenDoubleNull_shouldReturnNull() {
+        final Double value = null;
+        final double maximum = 100.0;
+        final String message = "percentage must be at most 100";
+
+        final Double result = ValidationUtils.requireAtMostIfPresent(value, maximum, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireBetweenIfPresent_whenIntegerWithinBounds_shouldReturnValue() {
+        final Integer value = 50;
+        final int minimum = 0;
+        final int maximum = 100;
+        final String message = "count must be between 0 and 100";
+
+        final Integer result = ValidationUtils.requireBetweenIfPresent(value, minimum, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireBetweenIfPresent_whenIntegerOutOfBounds_shouldThrow() {
+        final Integer value = 101;
+        final int minimum = 0;
+        final int maximum = 100;
+        final String message = "count must be between 0 and 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireBetweenIfPresent(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireBetweenIfPresent_whenIntegerNull_shouldReturnNull() {
+        final Integer value = null;
+        final int minimum = 0;
+        final int maximum = 100;
+        final String message = "count must be between 0 and 100";
+
+        final Integer result = ValidationUtils.requireBetweenIfPresent(value, minimum, maximum, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireBetweenIfPresent_whenLongWithinBounds_shouldReturnValue() {
+        final Long value = 50L;
+        final long minimum = 0L;
+        final long maximum = 100L;
+        final String message = "id must be between 0 and 100";
+
+        final Long result = ValidationUtils.requireBetweenIfPresent(value, minimum, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireBetweenIfPresent_whenLongOutOfBounds_shouldThrow() {
+        final Long value = -1L;
+        final long minimum = 0L;
+        final long maximum = 100L;
+        final String message = "id must be between 0 and 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireBetweenIfPresent(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireBetweenIfPresent_whenLongNull_shouldReturnNull() {
+        final Long value = null;
+        final long minimum = 0L;
+        final long maximum = 100L;
+        final String message = "id must be between 0 and 100";
+
+        final Long result = ValidationUtils.requireBetweenIfPresent(value, minimum, maximum, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireBetweenIfPresent_whenDoubleWithinBounds_shouldReturnValue() {
+        final Double value = 50.0;
+        final double minimum = 0.0;
+        final double maximum = 100.0;
+        final String message = "percentage must be between 0 and 100";
+
+        final Double result = ValidationUtils.requireBetweenIfPresent(value, minimum, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireBetweenIfPresent_whenDoubleOutOfBounds_shouldThrow() {
+        final Double value = 101.0;
+        final double minimum = 0.0;
+        final double maximum = 100.0;
+        final String message = "percentage must be between 0 and 100";
+
+        assertThatThrownBy(() -> ValidationUtils.requireBetweenIfPresent(value, minimum, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireBetweenIfPresent_whenDoubleNull_shouldReturnNull() {
+        final Double value = null;
+        final double minimum = 0.0;
+        final double maximum = 100.0;
+        final String message = "percentage must be between 0 and 100";
+
+        final Double result = ValidationUtils.requireBetweenIfPresent(value, minimum, maximum, message);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
     void requireMatches_whenValueNull_shouldThrow() {
         final String value = null;
         final Pattern pattern = Pattern.compile("^ssh-rsa ");
