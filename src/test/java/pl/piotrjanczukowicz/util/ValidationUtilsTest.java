@@ -10,9 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ValidationUtilsTest {
 
@@ -1446,6 +1449,237 @@ class ValidationUtilsTest {
         assertThatThrownBy(() -> ValidationUtils.requireMatches(value, pattern, message))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("pattern must not be null");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,false", "false,true"})
+    void requireExactlyOne_whenExactlyOneOfTwoPresent_shouldNotThrow(final boolean first, final boolean second) {
+        final String message = "exactly one is required";
+
+        assertThatCode(() -> ValidationUtils.requireExactlyOne(present(first), present(second), message))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "true,true"})
+    void requireExactlyOne_whenNoneOrBothOfTwoPresent_shouldThrow(final boolean first, final boolean second) {
+        final String message = "exactly one is required";
+
+        assertThatThrownBy(() -> ValidationUtils.requireExactlyOne(present(first), present(second), message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,false,false", "false,true,false", "false,false,true"})
+    void requireExactlyOne_whenExactlyOneOfThreePresent_shouldNotThrow(
+            final boolean first, final boolean second, final boolean third) {
+        final String message = "exactly one is required";
+
+        assertThatCode(() ->
+                        ValidationUtils.requireExactlyOne(present(first), present(second), present(third), message))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false,false", "true,true,false", "true,false,true", "false,true,true", "true,true,true"})
+    void requireExactlyOne_whenNoneOrManyOfThreePresent_shouldThrow(
+            final boolean first, final boolean second, final boolean third) {
+        final String message = "exactly one is required";
+
+        assertThatThrownBy(() ->
+                        ValidationUtils.requireExactlyOne(present(first), present(second), present(third), message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "true,false", "false,true"})
+    void requireAtMostOne_whenAtMostOneOfTwoPresent_shouldNotThrow(final boolean first, final boolean second) {
+        final String message = "mutually exclusive";
+
+        assertThatCode(() -> ValidationUtils.requireAtMostOne(present(first), present(second), message))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void requireAtMostOne_whenBothOfTwoPresent_shouldThrow() {
+        final String message = "mutually exclusive";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtMostOne(present(true), present(true), message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false,false", "true,false,false", "false,true,false", "false,false,true"})
+    void requireAtMostOne_whenAtMostOneOfThreePresent_shouldNotThrow(
+            final boolean first, final boolean second, final boolean third) {
+        final String message = "mutually exclusive";
+
+        assertThatCode(() -> ValidationUtils.requireAtMostOne(present(first), present(second), present(third), message))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,true,false", "true,false,true", "false,true,true", "true,true,true"})
+    void requireAtMostOne_whenManyOfThreePresent_shouldThrow(
+            final boolean first, final boolean second, final boolean third) {
+        final String message = "mutually exclusive";
+
+        assertThatThrownBy(() ->
+                        ValidationUtils.requireAtMostOne(present(first), present(second), present(third), message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,false", "false,true", "true,true"})
+    void requireAtLeastOne_whenAnyOfTwoPresent_shouldNotThrow(final boolean first, final boolean second) {
+        final String message = "at least one is required";
+
+        assertThatCode(() -> ValidationUtils.requireAtLeastOne(present(first), present(second), message))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void requireAtLeastOne_whenNoneOfTwoPresent_shouldThrow() {
+        final String message = "at least one is required";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtLeastOne(present(false), present(false), message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "true,false,false",
+        "false,true,false",
+        "false,false,true",
+        "true,true,false",
+        "true,false,true",
+        "false,true,true",
+        "true,true,true"
+    })
+    void requireAtLeastOne_whenAnyOfThreePresent_shouldNotThrow(
+            final boolean first, final boolean second, final boolean third) {
+        final String message = "at least one is required";
+
+        assertThatCode(() ->
+                        ValidationUtils.requireAtLeastOne(present(first), present(second), present(third), message))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void requireAtLeastOne_whenNoneOfThreePresent_shouldThrow() {
+        final String message = "at least one is required";
+
+        assertThatThrownBy(() ->
+                        ValidationUtils.requireAtLeastOne(present(false), present(false), present(false), message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "true,true"})
+    void requireBothOrNeither_whenBothOrNeitherPresent_shouldNotThrow(final boolean first, final boolean second) {
+        final String message = "must be set together";
+
+        assertThatCode(() -> ValidationUtils.requireBothOrNeither(present(first), present(second), message))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,false", "false,true"})
+    void requireBothOrNeither_whenOnlyOnePresent_shouldThrow(final boolean first, final boolean second) {
+        final String message = "must be set together";
+
+        assertThatThrownBy(() -> ValidationUtils.requireBothOrNeither(present(first), present(second), message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireExactlyOne_whenFalseBooleanPassed_shouldCountAsPresent() {
+        final String message = "exactly one is required";
+
+        assertThatThrownBy(() -> ValidationUtils.requireExactlyOne(Boolean.FALSE, Boolean.FALSE, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requirePositive_whenIntPositive_shouldReturnValue() {
+        final int value = 1;
+        final String message = "value must be positive";
+
+        final int result = ValidationUtils.requirePositive(value, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void requirePositive_whenIntZeroOrNegative_shouldThrow(final int value) {
+        final String message = "value must be positive";
+
+        assertThatThrownBy(() -> ValidationUtils.requirePositive(value, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requirePositive_whenLongPositive_shouldReturnValue() {
+        final long value = 1L;
+        final String message = "value must be positive";
+
+        final long result = ValidationUtils.requirePositive(value, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0L, -1L})
+    void requirePositive_whenLongZeroOrNegative_shouldThrow(final long value) {
+        final String message = "value must be positive";
+
+        assertThatThrownBy(() -> ValidationUtils.requirePositive(value, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireNonEmpty_whenArrayNonEmpty_shouldReturnSameArray() {
+        final String[] values = {"a"};
+        final String message = "values must not be empty";
+
+        final String[] result = ValidationUtils.requireNonEmpty(values, message);
+
+        assertThat(result).isSameAs(values);
+    }
+
+    @Test
+    void requireNonEmpty_whenArrayEmpty_shouldThrow() {
+        final String[] values = {};
+        final String message = "values must not be empty";
+
+        assertThatThrownBy(() -> ValidationUtils.requireNonEmpty(values, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireNonEmpty_whenArrayNull_shouldThrow() {
+        final String[] values = null;
+        final String message = "values must not be empty";
+
+        assertThatThrownBy(() -> ValidationUtils.requireNonEmpty(values, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
+    }
+
+    private static @Nullable Object present(final boolean present) {
+        return present ? "value" : null;
     }
 
     private static Stream<Duration> nonPositiveDurations() {

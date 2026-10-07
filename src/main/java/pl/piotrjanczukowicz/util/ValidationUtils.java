@@ -17,7 +17,10 @@ import org.jspecify.annotations.Nullable;
  * describe the failure. {@code null} is rejected with {@link NullPointerException}; other violations use
  * {@link IllegalArgumentException}. Numeric bounds are inclusive unless a method says otherwise.
  */
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public final class ValidationUtils {
+
+    private static final int ONE_PRESENT = 1;
 
     private ValidationUtils() {
         throw new UnsupportedOperationException("Utility class");
@@ -96,6 +99,36 @@ public final class ValidationUtils {
             throw new IllegalArgumentException(message);
         }
         return duration;
+    }
+
+    /**
+     * Requires {@code value} to be strictly positive.
+     *
+     * @param value value to check
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is zero or negative
+     */
+    public static int requirePositive(final int value, final String message) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be strictly positive.
+     *
+     * @param value value to check
+     * @param message exception text
+     * @return {@code value}
+     * @throws IllegalArgumentException if {@code value} is zero or negative
+     */
+    public static long requirePositive(final long value, final String message) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
     }
 
     /**
@@ -509,6 +542,25 @@ public final class ValidationUtils {
     }
 
     /**
+     * Requires {@code values} to be non-null and non-empty.
+     *
+     * @param values array to check
+     * @param message exception text
+     * @param <T> element type
+     * @return {@code values}
+     * @throws NullPointerException if {@code values} is {@code null}
+     * @throws IllegalArgumentException if {@code values} has length zero
+     */
+    public static <T> T[] requireNonEmpty(final T[] values, final String message) {
+        Objects.requireNonNull(values, message);
+
+        if (values.length == 0) {
+            throw new IllegalArgumentException(message);
+        }
+        return values;
+    }
+
+    /**
      * Requires {@code values} to contain at most {@code max} elements.
      *
      * @param values collection to check
@@ -831,6 +883,137 @@ public final class ValidationUtils {
     }
 
     /**
+     * Requires exactly one of two values to be present.
+     *
+     * <p>A value is present when it is non-null.
+     *
+     * @param first first value, or {@code null}
+     * @param second second value, or {@code null}
+     * @param message exception text
+     * @throws IllegalArgumentException if none or both values are present
+     */
+    public static void requireExactlyOne(
+            @Nullable final Object first, @Nullable final Object second, final String message) {
+        if (countPresent(first, second) != ONE_PRESENT) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Requires exactly one of three values to be present.
+     *
+     * <p>A value is present when it is non-null.
+     *
+     * @param first first value, or {@code null}
+     * @param second second value, or {@code null}
+     * @param third third value, or {@code null}
+     * @param message exception text
+     * @throws IllegalArgumentException if none or more than one value is present
+     */
+    public static void requireExactlyOne(
+            @Nullable final Object first,
+            @Nullable final Object second,
+            @Nullable final Object third,
+            final String message) {
+        if (countPresent(first, second, third) != ONE_PRESENT) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Requires at most one of two values to be present.
+     *
+     * <p>A value is present when it is non-null.
+     *
+     * @param first first value, or {@code null}
+     * @param second second value, or {@code null}
+     * @param message exception text
+     * @throws IllegalArgumentException if both values are present
+     */
+    public static void requireAtMostOne(
+            @Nullable final Object first, @Nullable final Object second, final String message) {
+        if (countPresent(first, second) > ONE_PRESENT) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Requires at most one of three values to be present.
+     *
+     * <p>A value is present when it is non-null.
+     *
+     * @param first first value, or {@code null}
+     * @param second second value, or {@code null}
+     * @param third third value, or {@code null}
+     * @param message exception text
+     * @throws IllegalArgumentException if more than one value is present
+     */
+    public static void requireAtMostOne(
+            @Nullable final Object first,
+            @Nullable final Object second,
+            @Nullable final Object third,
+            final String message) {
+        if (countPresent(first, second, third) > ONE_PRESENT) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Requires at least one of two values to be present.
+     *
+     * <p>A value is present when it is non-null.
+     *
+     * @param first first value, or {@code null}
+     * @param second second value, or {@code null}
+     * @param message exception text
+     * @throws IllegalArgumentException if neither value is present
+     */
+    public static void requireAtLeastOne(
+            @Nullable final Object first, @Nullable final Object second, final String message) {
+        if (countPresent(first, second) == 0) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Requires at least one of three values to be present.
+     *
+     * <p>A value is present when it is non-null.
+     *
+     * @param first first value, or {@code null}
+     * @param second second value, or {@code null}
+     * @param third third value, or {@code null}
+     * @param message exception text
+     * @throws IllegalArgumentException if no value is present
+     */
+    public static void requireAtLeastOne(
+            @Nullable final Object first,
+            @Nullable final Object second,
+            @Nullable final Object third,
+            final String message) {
+        if (countPresent(first, second, third) == 0) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Requires two values to be either both present or both absent.
+     *
+     * <p>A value is present when it is non-null.
+     *
+     * @param first first value, or {@code null}
+     * @param second second value, or {@code null}
+     * @param message exception text
+     * @throws IllegalArgumentException if exactly one value is present
+     */
+    public static void requireBothOrNeither(
+            @Nullable final Object first, @Nullable final Object second, final String message) {
+        if (countPresent(first, second) == ONE_PRESENT) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
      * Returns {@code true} if {@code duration} is {@code null}, negative, or zero.
      *
      * @param duration duration to inspect, or {@code null}
@@ -848,5 +1031,15 @@ public final class ValidationUtils {
      */
     static boolean isPositive(@Nullable final Duration duration) {
         return duration != null && !duration.isNegative() && !duration.isZero();
+    }
+
+    private static int countPresent(@Nullable final Object... values) {
+        int present = 0;
+        for (final Object value : values) {
+            if (value != null) {
+                present++;
+            }
+        }
+        return present;
     }
 }
