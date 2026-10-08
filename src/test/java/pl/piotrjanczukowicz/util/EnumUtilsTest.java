@@ -4,7 +4,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -85,6 +94,53 @@ class EnumUtilsTest {
                 .hasMessage("wireValue must not be null");
     }
 
+    @Test
+    void fromWire_whenCalledConcurrently_shouldResolveCorrectlyAndBuildEachIndexOnce() throws Exception {
+        final int threads = 16;
+        final AtomicInteger firstMappings = new AtomicInteger();
+        final AtomicInteger secondMappings = new AtomicInteger();
+        final Function<ConcurrentEnumA, String> firstWire = constant -> {
+            firstMappings.incrementAndGet();
+            return constant.name().toLowerCase(Locale.ROOT);
+        };
+        final Function<ConcurrentEnumB, String> secondWire = constant -> {
+            secondMappings.incrementAndGet();
+            return "b-" + constant.ordinal();
+        };
+        final CountDownLatch start = new CountDownLatch(1);
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        try {
+            final List<Future<Boolean>> results = new ArrayList<>();
+            for (int i = 0; i < threads; i++) {
+                results.add(executor.submit(() -> {
+                    start.await();
+                    boolean isCorrect = true;
+                    for (int round = 0; round < 200; round++) {
+                        isCorrect &= EnumUtils.fromWire("one", ConcurrentEnumA.class, firstWire)
+                                .filter(ConcurrentEnumA.ONE::equals)
+                                .isPresent();
+                        isCorrect &= EnumUtils.fromWire("b-2", ConcurrentEnumB.class, secondWire)
+                                .filter(ConcurrentEnumB.THIRD::equals)
+                                .isPresent();
+                        isCorrect &= EnumUtils.fromWire("missing", ConcurrentEnumA.class, firstWire)
+                                .isEmpty();
+                    }
+                    return isCorrect;
+                }));
+            }
+
+            start.countDown();
+
+            for (final Future<Boolean> result : results) {
+                assertThat(result.get(30, TimeUnit.SECONDS)).isTrue();
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+        assertThat(firstMappings).hasValue(ConcurrentEnumA.values().length);
+        assertThat(secondMappings).hasValue(ConcurrentEnumB.values().length);
+    }
+
     private static Stream<Arguments> wireHits() {
         return Stream.of(
                 Arguments.of(
@@ -110,6 +166,17 @@ class EnumUtilsTest {
                         "unknown", SampleWireEnum.class, (Function<SampleWireEnum, String>) SampleWireEnum::wireValue),
                 Arguments.of(
                         "user", SampleWireEnum.class, (Function<SampleWireEnum, String>) SampleWireEnum::wireValue));
+    }
+
+    private enum ConcurrentEnumA {
+        ONE,
+        TWO
+    }
+
+    private enum ConcurrentEnumB {
+        FIRST,
+        SECOND,
+        THIRD
     }
 
     private enum SampleWireEnum {

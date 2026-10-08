@@ -52,9 +52,14 @@ public final class EnumUtils {
     @SuppressWarnings("unchecked")
     private static <E extends Enum<E>> Map<String, E> index(
             final Class<E> enumClass, final Function<E, String> wireValue) {
-        return (Map<String, E>) BY_WIRE.computeIfAbsent(
-                enumClass,
-                unused -> Stream.of(enumClass.getEnumConstants())
-                        .collect(Collectors.toUnmodifiableMap(wireValue, Function.identity())));
+        // get() first: computeIfAbsent can take the bin monitor even when the key is already present.
+        Map<String, ? extends Enum<?>> index = BY_WIRE.get(enumClass);
+        if (index == null) {
+            index = BY_WIRE.computeIfAbsent(
+                    enumClass,
+                    unused -> Stream.of(enumClass.getEnumConstants())
+                            .collect(Collectors.toUnmodifiableMap(wireValue, Function.identity())));
+        }
+        return (Map<String, E>) index;
     }
 }
