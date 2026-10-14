@@ -511,6 +511,50 @@ class ValidationUtilsTest {
     }
 
     @Test
+    void requireAtMost_whenDurationWithinMaximum_shouldReturnDuration() {
+        final Duration value = Duration.ofSeconds(2);
+        final Duration maximum = Duration.ofSeconds(2);
+        final String message = "wait must be at most PT2S";
+
+        final Duration result = ValidationUtils.requireAtMost(value, maximum, message);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
+    void requireAtMost_whenDurationExceedsMaximum_shouldThrow() {
+        final Duration value = Duration.ofSeconds(3);
+        final Duration maximum = Duration.ofSeconds(2);
+        final String message = "wait must be at most PT2S";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtMost(value, maximum, message))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtMost_whenDurationNull_shouldThrow() {
+        final Duration value = null;
+        final Duration maximum = Duration.ZERO;
+        final String message = "wait must be at most PT0S";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtMost(value, maximum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(message);
+    }
+
+    @Test
+    void requireAtMost_whenMaximumDurationNull_shouldThrow() {
+        final Duration value = Duration.ZERO;
+        final Duration maximum = null;
+        final String message = "wait must be at most PT0S";
+
+        assertThatThrownBy(() -> ValidationUtils.requireAtMost(value, maximum, message))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("maximum must not be null");
+    }
+
+    @Test
     void requireAtLeast_whenWithinMinimum_shouldReturnInt() {
         final int value = 2;
         final int minimum = 2;

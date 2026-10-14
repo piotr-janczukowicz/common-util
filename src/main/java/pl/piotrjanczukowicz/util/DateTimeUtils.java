@@ -1,14 +1,21 @@
 package pl.piotrjanczukowicz.util;
 
+import static pl.piotrjanczukowicz.util.ValidationUtils.requireNonNull;
+
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
- * Date-time formatting helpers.
+ * Date-time formatting and parsing helpers.
  *
- * <p>Converts {@link Instant} values to ISO-8601 UTC text ({@code Z} offset), not a local time zone.
+ * <p>Converts {@link Instant} values to ISO-8601 UTC text ({@code Z} offset), not a local time zone. Also converts RFC
+ * 1123 text, the form used by HTTP dates, to and from {@link Instant}.
  */
 public final class DateTimeUtils {
 
@@ -31,5 +38,45 @@ public final class DateTimeUtils {
         Objects.requireNonNull(instant, "instant must not be null");
 
         return DateTimeFormatter.ISO_INSTANT.format(instant.truncatedTo(ChronoUnit.SECONDS));
+    }
+
+    /**
+     * Parses RFC 1123 text, such as {@code Tue, 3 Jun 2008 11:05:30 GMT}, with
+     * {@link DateTimeFormatter#RFC_1123_DATE_TIME}.
+     *
+     * <p>Any zone offset the formatter accepts is applied, so the result is the same point in time in UTC. RFC 850 and
+     * asctime forms are not accepted.
+     *
+     * @param value text to parse
+     * @return the parsed instant, or empty if {@code value} is not RFC 1123 text
+     * @throws NullPointerException if {@code value} is {@code null}
+     */
+    public static Optional<Instant> parseRfc1123(final String value) {
+        requireNonNull(value, "value");
+
+        Optional<Instant> parsed;
+        try {
+            parsed = Optional.of(ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME)
+                    .toInstant());
+        } catch (final DateTimeParseException notRfc1123) {
+            parsed = Optional.empty();
+        }
+        return parsed;
+    }
+
+    /**
+     * Formats {@code instant} as RFC 1123 text in UTC, such as {@code Tue, 3 Jun 2008 11:05:30 GMT}.
+     *
+     * <p>The output is {@link DateTimeFormatter#RFC_1123_DATE_TIME} applied to {@code instant} at
+     * {@link ZoneOffset#UTC}. The day of the month is not zero-padded, and fractional seconds are dropped.
+     *
+     * @param instant instant to format
+     * @return RFC 1123 text in UTC
+     * @throws NullPointerException if {@code instant} is {@code null}
+     */
+    public static String toRfc1123(final Instant instant) {
+        requireNonNull(instant, "instant");
+
+        return DateTimeFormatter.RFC_1123_DATE_TIME.format(instant.atOffset(ZoneOffset.UTC));
     }
 }

@@ -315,6 +315,26 @@ public final class ValidationUtils {
     }
 
     /**
+     * Requires {@code value} to be at most {@code maximum}.
+     *
+     * @param value duration to check
+     * @param maximum inclusive upper bound
+     * @param message exception text
+     * @return {@code value}
+     * @throws NullPointerException if {@code value} or {@code maximum} is {@code null}
+     * @throws IllegalArgumentException if {@code value} is above {@code maximum}
+     */
+    public static Duration requireAtMost(final Duration value, final Duration maximum, final String message) {
+        Objects.requireNonNull(value, message);
+        Objects.requireNonNull(maximum, "maximum must not be null");
+
+        if (value.compareTo(maximum) > 0) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    /**
      * Requires {@code value} to be at most {@code maximum} when it is non-null.
      *
      * <p>{@code null} is allowed and returned unchanged. A present value is checked with {@link #requireAtMost(int,
