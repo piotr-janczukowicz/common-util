@@ -13,14 +13,17 @@ import org.jspecify.annotations.Nullable;
  * Argument validation helpers.
  *
  * <p>Fail-fast checks for method arguments and configuration. Each {@code require*} method either returns the same
- * instance (so the result can be assigned) or throws. {@code message} is used as the exception text so callers can
- * describe the failure. {@code null} is rejected with {@link NullPointerException}; other violations use
- * {@link IllegalArgumentException}. Numeric bounds are inclusive unless a method says otherwise.
+ * instance (so the result can be assigned) or throws. {@code fieldName} names the checked value; the exception text is
+ * built from it, for example {@code "timeout must be positive"}. {@code null} is rejected with
+ * {@link NullPointerException}; other violations use {@link IllegalArgumentException}. Numeric bounds are inclusive
+ * unless a method says otherwise.
  */
 @SuppressWarnings("PMD.ExcessivePublicCount")
 public final class ValidationUtils {
 
     private static final int ONE_PRESENT = 1;
+    private static final String ELEMENTS = " elements";
+    private static final String ENTRIES = " entries";
 
     private ValidationUtils() {
         throw new UnsupportedOperationException("Utility class");
@@ -30,7 +33,7 @@ public final class ValidationUtils {
      * Requires {@code value} to be non-null.
      *
      * @param value value to check
-     * @param fieldName name included in the exception message
+     * @param fieldName name of the checked value, used in the exception message
      * @param <T> value type
      * @return {@code value}
      * @throws NullPointerException if {@code value} is {@code null}
@@ -39,7 +42,7 @@ public final class ValidationUtils {
             value = "NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE",
             justification = "null is rejected with NullPointerException")
     public static <T> T requireNonNull(@Nullable final T value, final String fieldName) {
-        return Objects.requireNonNull(value, fieldName + " must not be null");
+        return Objects.requireNonNull(value, () -> fieldName + " must not be null");
     }
 
     /**
@@ -49,7 +52,7 @@ public final class ValidationUtils {
      * stripped; a value that contains non-whitespace still passes even if it also has spaces.
      *
      * @param value value to check
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws NullPointerException if {@code value} is {@code null}
      * @throws IllegalArgumentException if {@code value} is blank
@@ -57,10 +60,10 @@ public final class ValidationUtils {
     @SuppressFBWarnings(
             value = "NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE",
             justification = "null is rejected with NullPointerException")
-    public static String requireNotBlank(@Nullable final String value, final String message) {
-        final String nonNull = Objects.requireNonNull(value, message);
+    public static String requireNotBlank(@Nullable final String value, final String fieldName) {
+        final String nonNull = requireNonNull(value, fieldName);
         if (nonNull.isBlank()) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must not be blank");
         }
         return nonNull;
     }
@@ -72,13 +75,13 @@ public final class ValidationUtils {
      * {@link #requireNotBlank(String, String)}.
      *
      * @param value value to check, or {@code null}
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is blank
      */
-    public static @Nullable String requireNotBlankIfPresent(@Nullable final String value, final String message) {
+    public static @Nullable String requireNotBlankIfPresent(@Nullable final String value, final String fieldName) {
         if (value != null) {
-            requireNotBlank(value, message);
+            requireNotBlank(value, fieldName);
         }
         return value;
     }
@@ -87,16 +90,16 @@ public final class ValidationUtils {
      * Requires {@code duration} to be strictly positive.
      *
      * @param duration duration to check
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code duration}
      * @throws NullPointerException if {@code duration} is {@code null}
      * @throws IllegalArgumentException if {@code duration} is negative or zero
      */
-    public static Duration requirePositive(final Duration duration, final String message) {
-        Objects.requireNonNull(duration, message);
+    public static Duration requirePositive(final Duration duration, final String fieldName) {
+        requireNonNull(duration, fieldName);
 
         if (!isPositive(duration)) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be positive");
         }
         return duration;
     }
@@ -105,13 +108,13 @@ public final class ValidationUtils {
      * Requires {@code value} to be strictly positive.
      *
      * @param value value to check
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is zero or negative
      */
-    public static int requirePositive(final int value, final String message) {
+    public static int requirePositive(final int value, final String fieldName) {
         if (value <= 0) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be positive");
         }
         return value;
     }
@@ -120,13 +123,13 @@ public final class ValidationUtils {
      * Requires {@code value} to be strictly positive.
      *
      * @param value value to check
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is zero or negative
      */
-    public static long requirePositive(final long value, final String message) {
+    public static long requirePositive(final long value, final String fieldName) {
         if (value <= 0) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be positive");
         }
         return value;
     }
@@ -135,16 +138,16 @@ public final class ValidationUtils {
      * Requires {@code duration} to be zero or positive.
      *
      * @param duration duration to check
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code duration}
      * @throws NullPointerException if {@code duration} is {@code null}
      * @throws IllegalArgumentException if {@code duration} is negative
      */
-    public static Duration requireNonNegative(final Duration duration, final String message) {
-        Objects.requireNonNull(duration, message);
+    public static Duration requireNonNegative(final Duration duration, final String fieldName) {
+        requireNonNull(duration, fieldName);
 
         if (duration.isNegative()) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must not be negative");
         }
         return duration;
     }
@@ -154,13 +157,13 @@ public final class ValidationUtils {
      *
      * @param value value to check
      * @param minimum inclusive lower bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is below {@code minimum}
      */
-    public static int requireAtLeast(final int value, final int minimum, final String message) {
+    public static int requireAtLeast(final int value, final int minimum, final String fieldName) {
         if (value < minimum) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be at least " + minimum);
         }
         return value;
     }
@@ -170,13 +173,13 @@ public final class ValidationUtils {
      *
      * @param value value to check
      * @param minimum inclusive lower bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is below {@code minimum}
      */
-    public static long requireAtLeast(final long value, final long minimum, final String message) {
+    public static long requireAtLeast(final long value, final long minimum, final String fieldName) {
         if (value < minimum) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be at least " + minimum);
         }
         return value;
     }
@@ -189,16 +192,16 @@ public final class ValidationUtils {
      *
      * @param value value to check
      * @param minimum inclusive lower bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is non-finite or below {@code minimum}
      */
-    public static double requireAtLeast(final double value, final double minimum, final String message) {
+    public static double requireAtLeast(final double value, final double minimum, final String fieldName) {
         if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be finite and at least " + minimum);
         }
         if (value < minimum) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be finite and at least " + minimum);
         }
         return value;
     }
@@ -211,14 +214,14 @@ public final class ValidationUtils {
      *
      * @param value value to check, or {@code null}
      * @param minimum inclusive lower bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is below {@code minimum}
      */
     public static @Nullable Integer requireAtLeastIfPresent(
-            @Nullable final Integer value, final int minimum, final String message) {
+            @Nullable final Integer value, final int minimum, final String fieldName) {
         if (value != null) {
-            requireAtLeast(value, minimum, message);
+            requireAtLeast(value, minimum, fieldName);
         }
         return value;
     }
@@ -231,14 +234,14 @@ public final class ValidationUtils {
      *
      * @param value value to check, or {@code null}
      * @param minimum inclusive lower bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is below {@code minimum}
      */
     public static @Nullable Long requireAtLeastIfPresent(
-            @Nullable final Long value, final long minimum, final String message) {
+            @Nullable final Long value, final long minimum, final String fieldName) {
         if (value != null) {
-            requireAtLeast(value, minimum, message);
+            requireAtLeast(value, minimum, fieldName);
         }
         return value;
     }
@@ -251,14 +254,14 @@ public final class ValidationUtils {
      *
      * @param value value to check, or {@code null}
      * @param minimum inclusive lower bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is non-finite or below {@code minimum}
      */
     public static @Nullable Double requireAtLeastIfPresent(
-            @Nullable final Double value, final double minimum, final String message) {
+            @Nullable final Double value, final double minimum, final String fieldName) {
         if (value != null) {
-            requireAtLeast(value, minimum, message);
+            requireAtLeast(value, minimum, fieldName);
         }
         return value;
     }
@@ -268,13 +271,13 @@ public final class ValidationUtils {
      *
      * @param value value to check
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is above {@code maximum}
      */
-    public static int requireAtMost(final int value, final int maximum, final String message) {
+    public static int requireAtMost(final int value, final int maximum, final String fieldName) {
         if (value > maximum) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be at most " + maximum);
         }
         return value;
     }
@@ -284,13 +287,13 @@ public final class ValidationUtils {
      *
      * @param value value to check
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is above {@code maximum}
      */
-    public static long requireAtMost(final long value, final long maximum, final String message) {
+    public static long requireAtMost(final long value, final long maximum, final String fieldName) {
         if (value > maximum) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be at most " + maximum);
         }
         return value;
     }
@@ -300,16 +303,16 @@ public final class ValidationUtils {
      *
      * @param value value to check
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is non-finite or above {@code maximum}
      */
-    public static double requireAtMost(final double value, final double maximum, final String message) {
+    public static double requireAtMost(final double value, final double maximum, final String fieldName) {
         if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be finite and at most " + maximum);
         }
         if (value > maximum) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be finite and at most " + maximum);
         }
         return value;
     }
@@ -319,17 +322,17 @@ public final class ValidationUtils {
      *
      * @param value duration to check
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws NullPointerException if {@code value} or {@code maximum} is {@code null}
      * @throws IllegalArgumentException if {@code value} is above {@code maximum}
      */
-    public static Duration requireAtMost(final Duration value, final Duration maximum, final String message) {
-        Objects.requireNonNull(value, message);
+    public static Duration requireAtMost(final Duration value, final Duration maximum, final String fieldName) {
+        requireNonNull(value, fieldName);
         Objects.requireNonNull(maximum, "maximum must not be null");
 
         if (value.compareTo(maximum) > 0) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be at most " + maximum);
         }
         return value;
     }
@@ -342,14 +345,14 @@ public final class ValidationUtils {
      *
      * @param value value to check, or {@code null}
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is above {@code maximum}
      */
     public static @Nullable Integer requireAtMostIfPresent(
-            @Nullable final Integer value, final int maximum, final String message) {
+            @Nullable final Integer value, final int maximum, final String fieldName) {
         if (value != null) {
-            requireAtMost(value, maximum, message);
+            requireAtMost(value, maximum, fieldName);
         }
         return value;
     }
@@ -362,14 +365,14 @@ public final class ValidationUtils {
      *
      * @param value value to check, or {@code null}
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is above {@code maximum}
      */
     public static @Nullable Long requireAtMostIfPresent(
-            @Nullable final Long value, final long maximum, final String message) {
+            @Nullable final Long value, final long maximum, final String fieldName) {
         if (value != null) {
-            requireAtMost(value, maximum, message);
+            requireAtMost(value, maximum, fieldName);
         }
         return value;
     }
@@ -382,14 +385,14 @@ public final class ValidationUtils {
      *
      * @param value value to check, or {@code null}
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is non-finite or above {@code maximum}
      */
     public static @Nullable Double requireAtMostIfPresent(
-            @Nullable final Double value, final double maximum, final String message) {
+            @Nullable final Double value, final double maximum, final String fieldName) {
         if (value != null) {
-            requireAtMost(value, maximum, message);
+            requireAtMost(value, maximum, fieldName);
         }
         return value;
     }
@@ -400,13 +403,15 @@ public final class ValidationUtils {
      * @param value value to check
      * @param minimum inclusive lower bound
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is outside the range
      */
-    public static int requireBetween(final int value, final int minimum, final int maximum, final String message) {
-        requireAtLeast(value, minimum, message);
-        return requireAtMost(value, maximum, message);
+    public static int requireBetween(final int value, final int minimum, final int maximum, final String fieldName) {
+        if (value < minimum || value > maximum) {
+            throw invalid(fieldName, "must be " + between(minimum, maximum));
+        }
+        return value;
     }
 
     /**
@@ -415,13 +420,16 @@ public final class ValidationUtils {
      * @param value value to check
      * @param minimum inclusive lower bound
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is outside the range
      */
-    public static long requireBetween(final long value, final long minimum, final long maximum, final String message) {
-        requireAtLeast(value, minimum, message);
-        return requireAtMost(value, maximum, message);
+    public static long requireBetween(
+            final long value, final long minimum, final long maximum, final String fieldName) {
+        if (value < minimum || value > maximum) {
+            throw invalid(fieldName, "must be " + between(minimum, maximum));
+        }
+        return value;
     }
 
     /**
@@ -430,14 +438,16 @@ public final class ValidationUtils {
      * @param value value to check
      * @param minimum inclusive lower bound
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is non-finite or outside the range
      */
     public static double requireBetween(
-            final double value, final double minimum, final double maximum, final String message) {
-        requireAtLeast(value, minimum, message);
-        return requireAtMost(value, maximum, message);
+            final double value, final double minimum, final double maximum, final String fieldName) {
+        if (!Double.isFinite(value) || value < minimum || value > maximum) {
+            throw invalid(fieldName, "must be finite and " + between(minimum, maximum));
+        }
+        return value;
     }
 
     /**
@@ -449,14 +459,14 @@ public final class ValidationUtils {
      * @param value value to check, or {@code null}
      * @param minimum inclusive lower bound
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is outside the range
      */
     public static @Nullable Integer requireBetweenIfPresent(
-            @Nullable final Integer value, final int minimum, final int maximum, final String message) {
+            @Nullable final Integer value, final int minimum, final int maximum, final String fieldName) {
         if (value != null) {
-            requireBetween(value, minimum, maximum, message);
+            requireBetween(value, minimum, maximum, fieldName);
         }
         return value;
     }
@@ -470,14 +480,14 @@ public final class ValidationUtils {
      * @param value value to check, or {@code null}
      * @param minimum inclusive lower bound
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is outside the range
      */
     public static @Nullable Long requireBetweenIfPresent(
-            @Nullable final Long value, final long minimum, final long maximum, final String message) {
+            @Nullable final Long value, final long minimum, final long maximum, final String fieldName) {
         if (value != null) {
-            requireBetween(value, minimum, maximum, message);
+            requireBetween(value, minimum, maximum, fieldName);
         }
         return value;
     }
@@ -492,14 +502,14 @@ public final class ValidationUtils {
      * @param value value to check, or {@code null}
      * @param minimum inclusive lower bound
      * @param maximum inclusive upper bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is non-finite or outside the range
      */
     public static @Nullable Double requireBetweenIfPresent(
-            @Nullable final Double value, final double minimum, final double maximum, final String message) {
+            @Nullable final Double value, final double minimum, final double maximum, final String fieldName) {
         if (value != null) {
-            requireBetween(value, minimum, maximum, message);
+            requireBetween(value, minimum, maximum, fieldName);
         }
         return value;
     }
@@ -509,16 +519,16 @@ public final class ValidationUtils {
      *
      * @param value duration to check
      * @param minimum inclusive lower bound
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @throws NullPointerException if {@code value} or {@code minimum} is {@code null}
      * @throws IllegalArgumentException if {@code value} is below {@code minimum}
      */
-    public static void requireGreaterOrEqual(final Duration value, final Duration minimum, final String message) {
-        Objects.requireNonNull(value, message);
+    public static void requireGreaterOrEqual(final Duration value, final Duration minimum, final String fieldName) {
+        requireNonNull(value, fieldName);
         Objects.requireNonNull(minimum, "minimum must not be null");
 
         if (value.compareTo(minimum) < 0) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must be at least " + minimum);
         }
     }
 
@@ -526,17 +536,17 @@ public final class ValidationUtils {
      * Requires {@code values} to be non-null and non-empty.
      *
      * @param values collection to check
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <T> collection type
      * @return {@code values}
      * @throws NullPointerException if {@code values} is {@code null}
      * @throws IllegalArgumentException if {@code values} is empty
      */
-    public static <T extends Collection<?>> T requireNonEmpty(final T values, final String message) {
-        Objects.requireNonNull(values, message);
+    public static <T extends Collection<?>> T requireNonEmpty(final T values, final String fieldName) {
+        requireNonNull(values, fieldName);
 
         if (values.isEmpty()) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must not be empty");
         }
         return values;
     }
@@ -545,18 +555,18 @@ public final class ValidationUtils {
      * Requires {@code map} to be non-null and non-empty.
      *
      * @param map map to check
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <K> key type
      * @param <V> value type
      * @return {@code map}
      * @throws NullPointerException if {@code map} is {@code null}
      * @throws IllegalArgumentException if {@code map} is empty
      */
-    public static <K, V> Map<K, V> requireNonEmpty(final Map<K, V> map, final String message) {
-        Objects.requireNonNull(map, message);
+    public static <K, V> Map<K, V> requireNonEmpty(final Map<K, V> map, final String fieldName) {
+        requireNonNull(map, fieldName);
 
         if (map.isEmpty()) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must not be empty");
         }
         return map;
     }
@@ -565,17 +575,17 @@ public final class ValidationUtils {
      * Requires {@code values} to be non-null and non-empty.
      *
      * @param values array to check
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <T> element type
      * @return {@code values}
      * @throws NullPointerException if {@code values} is {@code null}
      * @throws IllegalArgumentException if {@code values} has length zero
      */
-    public static <T> T[] requireNonEmpty(final T[] values, final String message) {
-        Objects.requireNonNull(values, message);
+    public static <T> T[] requireNonEmpty(final T[] values, final String fieldName) {
+        requireNonNull(values, fieldName);
 
         if (values.length == 0) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must not be empty");
         }
         return values;
     }
@@ -585,17 +595,17 @@ public final class ValidationUtils {
      *
      * @param values collection to check
      * @param max inclusive maximum size
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <T> collection type
      * @return {@code values}
      * @throws NullPointerException if {@code values} is {@code null}
      * @throws IllegalArgumentException if {@code values} has more than {@code max} elements
      */
-    public static <T extends Collection<?>> T requireSizeAtMost(final T values, final int max, final String message) {
-        Objects.requireNonNull(values, message);
+    public static <T extends Collection<?>> T requireSizeAtMost(final T values, final int max, final String fieldName) {
+        requireNonNull(values, fieldName);
 
         if (values.size() > max) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have at most " + max + ELEMENTS);
         }
         return values;
     }
@@ -605,18 +615,18 @@ public final class ValidationUtils {
      *
      * @param map map to check
      * @param max inclusive maximum size
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <K> key type
      * @param <V> value type
      * @return {@code map}
      * @throws NullPointerException if {@code map} is {@code null}
      * @throws IllegalArgumentException if {@code map} has more than {@code max} entries
      */
-    public static <K, V> Map<K, V> requireSizeAtMost(final Map<K, V> map, final int max, final String message) {
-        Objects.requireNonNull(map, message);
+    public static <K, V> Map<K, V> requireSizeAtMost(final Map<K, V> map, final int max, final String fieldName) {
+        requireNonNull(map, fieldName);
 
         if (map.size() > max) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have at most " + max + ENTRIES);
         }
         return map;
     }
@@ -626,17 +636,18 @@ public final class ValidationUtils {
      *
      * @param values collection to check
      * @param min inclusive minimum size
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <T> collection type
      * @return {@code values}
      * @throws NullPointerException if {@code values} is {@code null}
      * @throws IllegalArgumentException if {@code values} has fewer than {@code min} elements
      */
-    public static <T extends Collection<?>> T requireSizeAtLeast(final T values, final int min, final String message) {
-        Objects.requireNonNull(values, message);
+    public static <T extends Collection<?>> T requireSizeAtLeast(
+            final T values, final int min, final String fieldName) {
+        requireNonNull(values, fieldName);
 
         if (values.size() < min) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have at least " + min + ELEMENTS);
         }
         return values;
     }
@@ -646,18 +657,18 @@ public final class ValidationUtils {
      *
      * @param map map to check
      * @param min inclusive minimum size
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <K> key type
      * @param <V> value type
      * @return {@code map}
      * @throws NullPointerException if {@code map} is {@code null}
      * @throws IllegalArgumentException if {@code map} has fewer than {@code min} entries
      */
-    public static <K, V> Map<K, V> requireSizeAtLeast(final Map<K, V> map, final int min, final String message) {
-        Objects.requireNonNull(map, message);
+    public static <K, V> Map<K, V> requireSizeAtLeast(final Map<K, V> map, final int min, final String fieldName) {
+        requireNonNull(map, fieldName);
 
         if (map.size() < min) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have at least " + min + ENTRIES);
         }
         return map;
     }
@@ -667,17 +678,18 @@ public final class ValidationUtils {
      *
      * @param values collection to check
      * @param size required size
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <T> collection type
      * @return {@code values}
      * @throws NullPointerException if {@code values} is {@code null}
      * @throws IllegalArgumentException if {@code values} does not have {@code size} elements
      */
-    public static <T extends Collection<?>> T requireSizeExactly(final T values, final int size, final String message) {
-        Objects.requireNonNull(values, message);
+    public static <T extends Collection<?>> T requireSizeExactly(
+            final T values, final int size, final String fieldName) {
+        requireNonNull(values, fieldName);
 
         if (values.size() != size) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have exactly " + size + ELEMENTS);
         }
         return values;
     }
@@ -687,18 +699,18 @@ public final class ValidationUtils {
      *
      * @param map map to check
      * @param size required size
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <K> key type
      * @param <V> value type
      * @return {@code map}
      * @throws NullPointerException if {@code map} is {@code null}
      * @throws IllegalArgumentException if {@code map} does not have {@code size} entries
      */
-    public static <K, V> Map<K, V> requireSizeExactly(final Map<K, V> map, final int size, final String message) {
-        Objects.requireNonNull(map, message);
+    public static <K, V> Map<K, V> requireSizeExactly(final Map<K, V> map, final int size, final String fieldName) {
+        requireNonNull(map, fieldName);
 
         if (map.size() != size) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have exactly " + size + ENTRIES);
         }
         return map;
     }
@@ -709,21 +721,18 @@ public final class ValidationUtils {
      * @param values collection to check
      * @param min inclusive minimum size
      * @param max inclusive maximum size
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <T> collection type
      * @return {@code values}
      * @throws NullPointerException if {@code values} is {@code null}
      * @throws IllegalArgumentException if size is outside {@code min}..{@code max}
      */
     public static <T extends Collection<?>> T requireSizeBetween(
-            final T values, final int min, final int max, final String message) {
-        Objects.requireNonNull(values, message);
+            final T values, final int min, final int max, final String fieldName) {
+        requireNonNull(values, fieldName);
 
-        if (values.size() < min) {
-            throw new IllegalArgumentException(message);
-        }
-        if (values.size() > max) {
-            throw new IllegalArgumentException(message);
+        if (values.size() < min || values.size() > max) {
+            throw invalid(fieldName, "must have " + between(min, max) + ELEMENTS);
         }
         return values;
     }
@@ -734,7 +743,7 @@ public final class ValidationUtils {
      * @param map map to check
      * @param min inclusive minimum size
      * @param max inclusive maximum size
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <K> key type
      * @param <V> value type
      * @return {@code map}
@@ -742,14 +751,11 @@ public final class ValidationUtils {
      * @throws IllegalArgumentException if size is outside {@code min}..{@code max}
      */
     public static <K, V> Map<K, V> requireSizeBetween(
-            final Map<K, V> map, final int min, final int max, final String message) {
-        Objects.requireNonNull(map, message);
+            final Map<K, V> map, final int min, final int max, final String fieldName) {
+        requireNonNull(map, fieldName);
 
-        if (map.size() < min) {
-            throw new IllegalArgumentException(message);
-        }
-        if (map.size() > max) {
-            throw new IllegalArgumentException(message);
+        if (map.size() < min || map.size() > max) {
+            throw invalid(fieldName, "must have " + between(min, max) + ENTRIES);
         }
         return map;
     }
@@ -761,17 +767,17 @@ public final class ValidationUtils {
      * order is not changed. Two {@code null} elements count as duplicates.
      *
      * @param values collection to check
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @param <T> collection type
      * @return {@code values}
      * @throws NullPointerException if {@code values} is {@code null}
      * @throws IllegalArgumentException if {@code values} contains duplicates
      */
-    public static <T extends Collection<?>> T requireUniqueItems(final T values, final String message) {
-        Objects.requireNonNull(values, message);
+    public static <T extends Collection<?>> T requireUniqueItems(final T values, final String fieldName) {
+        requireNonNull(values, fieldName);
 
         if (values.size() != new HashSet<>(values).size()) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must not contain duplicates");
         }
         return values;
     }
@@ -783,16 +789,16 @@ public final class ValidationUtils {
      *
      * @param value string to check
      * @param max inclusive maximum length
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws NullPointerException if {@code value} is {@code null}
      * @throws IllegalArgumentException if {@code value} is longer than {@code max}
      */
-    public static String requireMaxLength(final String value, final int max, final String message) {
-        Objects.requireNonNull(value, message);
+    public static String requireMaxLength(final String value, final int max, final String fieldName) {
+        requireNonNull(value, fieldName);
 
         if (value.length() > max) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have length at most " + max);
         }
         return value;
     }
@@ -805,14 +811,14 @@ public final class ValidationUtils {
      *
      * @param value string to check, or {@code null}
      * @param max inclusive maximum length
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is longer than {@code max}
      */
     public static @Nullable String requireMaxLengthIfPresent(
-            @Nullable final String value, final int max, final String message) {
+            @Nullable final String value, final int max, final String fieldName) {
         if (value != null) {
-            requireMaxLength(value, max, message);
+            requireMaxLength(value, max, fieldName);
         }
         return value;
     }
@@ -824,16 +830,16 @@ public final class ValidationUtils {
      *
      * @param value string to check
      * @param min inclusive minimum length
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws NullPointerException if {@code value} is {@code null}
      * @throws IllegalArgumentException if {@code value} is shorter than {@code min}
      */
-    public static String requireMinLength(final String value, final int min, final String message) {
-        Objects.requireNonNull(value, message);
+    public static String requireMinLength(final String value, final int min, final String fieldName) {
+        requireNonNull(value, fieldName);
 
         if (value.length() < min) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have length at least " + min);
         }
         return value;
     }
@@ -846,14 +852,14 @@ public final class ValidationUtils {
      *
      * @param value string to check, or {@code null}
      * @param min inclusive minimum length
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws IllegalArgumentException if {@code value} is shorter than {@code min}
      */
     public static @Nullable String requireMinLengthIfPresent(
-            @Nullable final String value, final int min, final String message) {
+            @Nullable final String value, final int min, final String fieldName) {
         if (value != null) {
-            requireMinLength(value, min, message);
+            requireMinLength(value, min, fieldName);
         }
         return value;
     }
@@ -866,17 +872,17 @@ public final class ValidationUtils {
      *
      * @param value string to check
      * @param pattern regex applied with {@link java.util.regex.Matcher#find()}
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws NullPointerException if {@code value} or {@code pattern} is {@code null}
      * @throws IllegalArgumentException if {@code value} does not match {@code pattern}
      */
-    public static String requireMatches(final String value, final Pattern pattern, final String message) {
-        Objects.requireNonNull(value, message);
+    public static String requireMatches(final String value, final Pattern pattern, final String fieldName) {
+        requireNonNull(value, fieldName);
         Objects.requireNonNull(pattern, "pattern must not be null");
 
         if (!pattern.matcher(value).find()) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must match the required pattern");
         }
         return value;
     }
@@ -889,15 +895,15 @@ public final class ValidationUtils {
      *
      * @param value string to check, or {@code null}
      * @param pattern regex applied with {@link java.util.regex.Matcher#find()}
-     * @param message exception text
+     * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
      * @throws NullPointerException if {@code value} is present and {@code pattern} is {@code null}
      * @throws IllegalArgumentException if {@code value} does not match {@code pattern}
      */
     public static @Nullable String requireMatchesIfPresent(
-            @Nullable final String value, final Pattern pattern, final String message) {
+            @Nullable final String value, final Pattern pattern, final String fieldName) {
         if (value != null) {
-            requireMatches(value, pattern, message);
+            requireMatches(value, pattern, fieldName);
         }
         return value;
     }
@@ -909,13 +915,13 @@ public final class ValidationUtils {
      *
      * @param first first value, or {@code null}
      * @param second second value, or {@code null}
-     * @param message exception text
+     * @param fieldName name of the checked group, used in the exception message
      * @throws IllegalArgumentException if none or both values are present
      */
     public static void requireExactlyOne(
-            @Nullable final Object first, @Nullable final Object second, final String message) {
+            @Nullable final Object first, @Nullable final Object second, final String fieldName) {
         if (countPresent(first, second) != ONE_PRESENT) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have exactly one value present");
         }
     }
 
@@ -927,16 +933,16 @@ public final class ValidationUtils {
      * @param first first value, or {@code null}
      * @param second second value, or {@code null}
      * @param third third value, or {@code null}
-     * @param message exception text
+     * @param fieldName name of the checked group, used in the exception message
      * @throws IllegalArgumentException if none or more than one value is present
      */
     public static void requireExactlyOne(
             @Nullable final Object first,
             @Nullable final Object second,
             @Nullable final Object third,
-            final String message) {
+            final String fieldName) {
         if (countPresent(first, second, third) != ONE_PRESENT) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have exactly one value present");
         }
     }
 
@@ -947,13 +953,13 @@ public final class ValidationUtils {
      *
      * @param first first value, or {@code null}
      * @param second second value, or {@code null}
-     * @param message exception text
+     * @param fieldName name of the checked group, used in the exception message
      * @throws IllegalArgumentException if both values are present
      */
     public static void requireAtMostOne(
-            @Nullable final Object first, @Nullable final Object second, final String message) {
+            @Nullable final Object first, @Nullable final Object second, final String fieldName) {
         if (countPresent(first, second) > ONE_PRESENT) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have at most one value present");
         }
     }
 
@@ -965,16 +971,16 @@ public final class ValidationUtils {
      * @param first first value, or {@code null}
      * @param second second value, or {@code null}
      * @param third third value, or {@code null}
-     * @param message exception text
+     * @param fieldName name of the checked group, used in the exception message
      * @throws IllegalArgumentException if more than one value is present
      */
     public static void requireAtMostOne(
             @Nullable final Object first,
             @Nullable final Object second,
             @Nullable final Object third,
-            final String message) {
+            final String fieldName) {
         if (countPresent(first, second, third) > ONE_PRESENT) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have at most one value present");
         }
     }
 
@@ -985,13 +991,13 @@ public final class ValidationUtils {
      *
      * @param first first value, or {@code null}
      * @param second second value, or {@code null}
-     * @param message exception text
+     * @param fieldName name of the checked group, used in the exception message
      * @throws IllegalArgumentException if neither value is present
      */
     public static void requireAtLeastOne(
-            @Nullable final Object first, @Nullable final Object second, final String message) {
+            @Nullable final Object first, @Nullable final Object second, final String fieldName) {
         if (countPresent(first, second) == 0) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have at least one value present");
         }
     }
 
@@ -1003,16 +1009,16 @@ public final class ValidationUtils {
      * @param first first value, or {@code null}
      * @param second second value, or {@code null}
      * @param third third value, or {@code null}
-     * @param message exception text
+     * @param fieldName name of the checked group, used in the exception message
      * @throws IllegalArgumentException if no value is present
      */
     public static void requireAtLeastOne(
             @Nullable final Object first,
             @Nullable final Object second,
             @Nullable final Object third,
-            final String message) {
+            final String fieldName) {
         if (countPresent(first, second, third) == 0) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have at least one value present");
         }
     }
 
@@ -1023,13 +1029,13 @@ public final class ValidationUtils {
      *
      * @param first first value, or {@code null}
      * @param second second value, or {@code null}
-     * @param message exception text
+     * @param fieldName name of the checked group, used in the exception message
      * @throws IllegalArgumentException if exactly one value is present
      */
     public static void requireBothOrNeither(
-            @Nullable final Object first, @Nullable final Object second, final String message) {
+            @Nullable final Object first, @Nullable final Object second, final String fieldName) {
         if (countPresent(first, second) == ONE_PRESENT) {
-            throw new IllegalArgumentException(message);
+            throw invalid(fieldName, "must have both values present or both absent");
         }
     }
 
@@ -1051,6 +1057,14 @@ public final class ValidationUtils {
      */
     static boolean isPositive(@Nullable final Duration duration) {
         return duration != null && !duration.isNegative() && !duration.isZero();
+    }
+
+    private static String between(final Object minimum, final Object maximum) {
+        return "between " + minimum + " and " + maximum;
+    }
+
+    private static IllegalArgumentException invalid(final String fieldName, final String rule) {
+        return new IllegalArgumentException(fieldName + " " + rule);
     }
 
     private static int countPresent(@Nullable final Object... values) {

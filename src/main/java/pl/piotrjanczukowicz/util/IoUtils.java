@@ -78,7 +78,7 @@ public final class IoUtils {
     public static byte[] readAllBounded(final InputStream stream, final long maxBytes, final long expectedLength)
             throws IOException {
         requireNonNull(stream, "stream");
-        requireAtLeast(maxBytes, 0L, "maxBytes must not be negative");
+        requireAtLeast(maxBytes, 0L, "maxBytes");
 
         final long limit = Math.min(maxBytes, MAX_BUFFER_BYTES);
         return expectedLength > 0 ? readSized(stream, limit, expectedLength) : readChunked(stream, limit);

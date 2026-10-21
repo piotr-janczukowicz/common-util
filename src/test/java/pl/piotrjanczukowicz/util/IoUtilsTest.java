@@ -210,7 +210,7 @@ class IoUtilsTest {
 
         assertThatThrownBy(() -> IoUtils.readAllBounded(in, -1))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("maxBytes must not be negative");
+                .hasMessage("maxBytes must be at least 0");
     }
 
     @Test
@@ -219,7 +219,7 @@ class IoUtilsTest {
 
         assertThatThrownBy(() -> IoUtils.readAllBounded(in, -1, 1))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("maxBytes must not be negative");
+                .hasMessage("maxBytes must be at least 0");
     }
 
     @Test

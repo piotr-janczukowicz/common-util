@@ -62,6 +62,42 @@ class EnumUtilsTest {
     }
 
     @Test
+    void fromWireWithDefault_whenWireMatches_shouldReturnConstant() {
+        final String value = "secret";
+        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
+        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
+        final SampleWireEnum defaultValue = SampleWireEnum.USER;
+
+        final SampleWireEnum resolved = EnumUtils.fromWire(value, enumClass, wireValue, defaultValue);
+
+        assertThat(resolved).isEqualTo(SampleWireEnum.SECRET);
+    }
+
+    @Test
+    void fromWireWithDefault_whenWireDoesNotMatch_shouldReturnDefault() {
+        final String value = "unknown";
+        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
+        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
+        final SampleWireEnum defaultValue = SampleWireEnum.USER;
+
+        final SampleWireEnum resolved = EnumUtils.fromWire(value, enumClass, wireValue, defaultValue);
+
+        assertThat(resolved).isEqualTo(SampleWireEnum.USER);
+    }
+
+    @Test
+    void fromWireWithDefault_whenDefaultValueNull_shouldThrow() {
+        final String value = "secret";
+        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
+        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
+        final SampleWireEnum defaultValue = null;
+
+        assertThatThrownBy(() -> EnumUtils.fromWire(value, enumClass, wireValue, defaultValue))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("defaultValue must not be null");
+    }
+
+    @Test
     void fromWire_whenValueNull_shouldThrow() {
         final String value = null;
         final Class<SampleWireEnum> enumClass = SampleWireEnum.class;

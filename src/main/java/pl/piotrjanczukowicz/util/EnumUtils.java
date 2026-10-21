@@ -49,6 +49,28 @@ public final class EnumUtils {
         return Optional.ofNullable(index(enumClass, wireValue).get(value));
     }
 
+    /**
+     * Returns the constant of {@code enumClass} whose mapped wire string equals {@code value}, or {@code defaultValue}
+     * when no constant matches.
+     *
+     * <p>Same matching and caching as {@link #fromWire(String, Class, Function)}.
+     *
+     * @param value wire string to match
+     * @param enumClass enum type
+     * @param wireValue mapping from constant to wire string
+     * @param defaultValue constant returned when nothing matches
+     * @param <E> enum type
+     * @return matching constant, or {@code defaultValue}
+     * @throws NullPointerException if any argument is {@code null}
+     * @throws IllegalStateException if two constants map to the same wire string
+     */
+    public static <E extends Enum<E>> E fromWire(
+            final String value, final Class<E> enumClass, final Function<E, String> wireValue, final E defaultValue) {
+        Objects.requireNonNull(defaultValue, "defaultValue must not be null");
+
+        return fromWire(value, enumClass, wireValue).orElse(defaultValue);
+    }
+
     @SuppressWarnings("unchecked")
     private static <E extends Enum<E>> Map<String, E> index(
             final Class<E> enumClass, final Function<E, String> wireValue) {

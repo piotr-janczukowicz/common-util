@@ -35,8 +35,8 @@ public final class ConcurrencyUtils {
      */
     public static void sleepInterruptibly(final Duration delay, final String message) throws InterruptedIOException {
         requireNonNull(delay, "delay");
-        requireNonNegative(delay, "delay must not be negative");
-        requireNotBlank(message, "message must not be blank");
+        requireNonNegative(delay, "delay");
+        requireNotBlank(message, "message");
 
         if (delay.isZero()) {
             return;
@@ -62,7 +62,7 @@ public final class ConcurrencyUtils {
      */
     public static InterruptedIOException toInterruptedIo(final InterruptedException interrupted, final String message) {
         requireNonNull(interrupted, "interrupted");
-        requireNotBlank(message, "message must not be blank");
+        requireNotBlank(message, "message");
 
         Thread.currentThread().interrupt();
         final InterruptedIOException failure = new InterruptedIOException(message);

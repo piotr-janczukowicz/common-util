@@ -21,7 +21,7 @@ Call `ValidationUtils.requireNotBlank` to reject null or blank strings and keep 
 ```java
 import pl.piotrjanczukowicz.util.ValidationUtils;
 
-String name = ValidationUtils.requireNotBlank(rawName, "name must not be blank");
+String name = ValidationUtils.requireNotBlank(rawName, "name");
 ```
 
 ## License

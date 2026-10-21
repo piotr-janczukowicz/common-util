@@ -52,7 +52,7 @@ public final class FileUtils {
      */
     public static byte[] readBytes(final Class<?> type, final String fileName) {
         Objects.requireNonNull(type, "type must not be null");
-        requireNotBlank(fileName, "fileName must not be blank");
+        requireNotBlank(fileName, "fileName");
 
         try (InputStream stream = type.getResourceAsStream(fileName)) {
             if (stream == null) {

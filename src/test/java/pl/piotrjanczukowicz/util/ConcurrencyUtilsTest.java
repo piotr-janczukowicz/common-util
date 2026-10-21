@@ -75,7 +75,7 @@ class ConcurrencyUtilsTest {
 
         assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(Duration.ZERO, message))
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage("message must not be blank");
+                .hasMessage("message must not be null");
     }
 
     @Test
