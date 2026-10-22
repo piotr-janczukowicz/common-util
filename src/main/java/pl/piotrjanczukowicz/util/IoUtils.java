@@ -126,24 +126,30 @@ public final class IoUtils {
         byte[] chunk = new byte[0];
         int filled = 0;
         int total = 0;
-        while (true) {
+        boolean isEnd = false;
+        while (!isEnd) {
             final long remaining = limit - total;
-            final int read;
             if (remaining == 0) {
                 rejectExcess(stream, limit);
-                read = -1;
-            } else {
-                if (filled == chunk.length) {
-                    chunk = nextChunk(full, chunk, remaining);
-                    filled = 0;
+                isEnd = true;
+            } else if (filled == chunk.length) {
+                // Full chunk: a single probe byte tells "exactly full" (no new chunk) from "more data" (next chunk).
+                final int next = stream.read();
+                isEnd = next < 0;
+                if (!isEnd) {
+                    chunk = nextChunk(full, chunk, total, remaining);
+                    chunk[0] = (byte) next;
+                    filled = 1;
+                    total++;
                 }
-                read = stream.read(chunk, filled, (int) Math.min(chunk.length - (long) filled, remaining));
+            } else {
+                final int read = stream.read(chunk, filled, (int) Math.min(chunk.length - (long) filled, remaining));
+                isEnd = read < 0;
+                if (!isEnd) {
+                    filled += read;
+                    total += read;
+                }
             }
-            if (read < 0) {
-                break;
-            }
-            filled += read;
-            total += read;
         }
         return join(full, chunk, filled, total);
     }
@@ -170,12 +176,15 @@ public final class IoUtils {
         return result;
     }
 
-    // Moves the full chunk to the list and starts the next one, which is not longer than what may still be read.
-    private static byte[] nextChunk(final List<byte[]> full, final byte[] filledChunk, final long remaining) {
+    // Moves the full chunk to the list and starts the next one. Chunks double with the bytes read so far, up to
+    // NEXT_CHUNK_BYTES, so a body just past one chunk does not pay for a large, mostly empty chunk. A chunk is never
+    // longer than what may still be read.
+    private static byte[] nextChunk(
+            final List<byte[]> full, final byte[] filledChunk, final int total, final long remaining) {
         if (filledChunk.length > 0) {
             full.add(filledChunk);
         }
-        final int size = full.isEmpty() ? FIRST_CHUNK_BYTES : NEXT_CHUNK_BYTES;
+        final int size = total == 0 ? FIRST_CHUNK_BYTES : Math.min(total, NEXT_CHUNK_BYTES);
         return new byte[(int) Math.min(size, remaining)];
     }
 

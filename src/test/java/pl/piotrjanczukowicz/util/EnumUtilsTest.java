@@ -1,7 +1,6 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
@@ -27,16 +26,18 @@ import org.junit.jupiter.params.provider.ValueSource;
 class EnumUtilsTest {
 
     @Test
-    void constructor_whenInstantiatedViaReflection_shouldThrow() throws Exception {
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
         final Constructor<EnumUtils> constructor = EnumUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
 
-        assertThatThrownBy(constructor::newInstance).hasCauseInstanceOf(UnsupportedOperationException.class);
+        final Throwable thrown = catchThrowable(constructor::newInstance);
+
+        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     @ParameterizedTest
     @MethodSource("wireHits")
-    void fromWire_whenWireMatches_shouldReturnConstant(final String wire, final SampleWireEnum expected) {
+    void fromWire_shouldReturnConstant_whenWireMatches(final String wire, final SampleWireEnum expected) {
         final EnumUtils.WireIndex<SampleWireEnum> index =
                 EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
 
@@ -47,7 +48,7 @@ class EnumUtilsTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"unknown", "user", ""})
-    void fromWire_whenWireDoesNotMatch_shouldReturnEmpty(final String wire) {
+    void fromWire_shouldReturnEmpty_whenWireDoesNotMatch(final String wire) {
         final EnumUtils.WireIndex<SampleWireEnum> index =
                 EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
 
@@ -57,21 +58,26 @@ class EnumUtilsTest {
     }
 
     @Test
-    void index_whenSameEnumIndexedWithDifferentMappings_shouldResolveEachByItsOwnMapping() {
+    void index_shouldResolveEachByItsOwnMapping_whenSameEnumIndexedWithDifferentMappings() {
         final EnumUtils.WireIndex<SampleWireEnum> byWire =
                 EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
         final EnumUtils.WireIndex<SampleWireEnum> byName = EnumUtils.index(SampleWireEnum.class, SampleWireEnum::name);
 
+        final Optional<SampleWireEnum> wireHit = byWire.fromWire("secret");
+        final Optional<SampleWireEnum> wireMiss = byWire.fromWire("SECRET");
+        final Optional<SampleWireEnum> nameHit = byName.fromWire("SECRET");
+        final Optional<SampleWireEnum> nameMiss = byName.fromWire("secret");
+
         assertSoftly(softly -> {
-            softly.assertThat(byWire.fromWire("secret")).contains(SampleWireEnum.SECRET);
-            softly.assertThat(byWire.fromWire("SECRET")).isEmpty();
-            softly.assertThat(byName.fromWire("SECRET")).contains(SampleWireEnum.SECRET);
-            softly.assertThat(byName.fromWire("secret")).isEmpty();
+            softly.assertThat(wireHit).contains(SampleWireEnum.SECRET);
+            softly.assertThat(wireMiss).isEmpty();
+            softly.assertThat(nameHit).contains(SampleWireEnum.SECRET);
+            softly.assertThat(nameMiss).isEmpty();
         });
     }
 
     @Test
-    void index_whenTwoConstantsShareWireValue_shouldThrow() {
+    void index_shouldThrow_whenTwoConstantsShareWireValue() {
         final Function<SampleWireEnum, String> constantWire = constant -> "same";
 
         final Throwable thrown = catchThrowable(() -> EnumUtils.index(SampleWireEnum.class, constantWire));
@@ -80,22 +86,20 @@ class EnumUtilsTest {
     }
 
     @Test
-    void index_whenCreated_shouldApplyMappingOncePerConstant() {
+    void index_shouldApplyMappingOncePerConstant() {
         final AtomicInteger mappings = new AtomicInteger();
         final Function<SampleWireEnum, String> countingWire = constant -> {
             mappings.incrementAndGet();
             return constant.wireValue();
         };
 
-        final EnumUtils.WireIndex<SampleWireEnum> index = EnumUtils.index(SampleWireEnum.class, countingWire);
-        index.fromWire("secret");
-        index.fromWire("missing");
+        EnumUtils.index(SampleWireEnum.class, countingWire);
 
         assertThat(mappings).hasValue(SampleWireEnum.values().length);
     }
 
     @Test
-    void index_whenWireValueReturnsNull_shouldThrowNamingConstant() {
+    void index_shouldThrowNamingConstant_whenWireValueReturnsNull() {
         final Function<SampleWireEnum, String> nullWire = constant -> null;
 
         final Throwable thrown = catchThrowable(() -> EnumUtils.index(SampleWireEnum.class, nullWire));
@@ -104,7 +108,7 @@ class EnumUtilsTest {
     }
 
     @Test
-    void indexFromWireWithDefault_whenWireMatches_shouldReturnConstant() {
+    void indexFromWireWithDefault_shouldReturnConstant_whenWireMatches() {
         final EnumUtils.WireIndex<SampleWireEnum> index =
                 EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
 
@@ -114,7 +118,7 @@ class EnumUtilsTest {
     }
 
     @Test
-    void indexFromWireWithDefault_whenWireDoesNotMatch_shouldReturnDefault() {
+    void indexFromWireWithDefault_shouldReturnDefault_whenWireDoesNotMatch() {
         final EnumUtils.WireIndex<SampleWireEnum> index =
                 EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
 
@@ -124,7 +128,7 @@ class EnumUtilsTest {
     }
 
     @Test
-    void indexFromWireWithDefault_whenDefaultValueNull_shouldThrow() {
+    void indexFromWireWithDefault_shouldThrow_whenDefaultValueNull() {
         final EnumUtils.WireIndex<SampleWireEnum> index =
                 EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
         final SampleWireEnum defaultValue = null;
@@ -135,7 +139,7 @@ class EnumUtilsTest {
     }
 
     @Test
-    void fromWire_whenValueNull_shouldThrow() {
+    void fromWire_shouldThrow_whenValueNull() {
         final EnumUtils.WireIndex<SampleWireEnum> index =
                 EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
         final String value = null;
@@ -146,7 +150,7 @@ class EnumUtilsTest {
     }
 
     @Test
-    void index_whenEnumClassNull_shouldThrow() {
+    void index_shouldThrow_whenEnumClassNull() {
         final Class<SampleWireEnum> enumClass = null;
 
         final Throwable thrown = catchThrowable(() -> EnumUtils.index(enumClass, SampleWireEnum::wireValue));
@@ -155,7 +159,7 @@ class EnumUtilsTest {
     }
 
     @Test
-    void index_whenWireValueNull_shouldThrow() {
+    void index_shouldThrow_whenWireValueNull() {
         final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
         final Function<SampleWireEnum, String> wireValue = null;
 
@@ -165,11 +169,12 @@ class EnumUtilsTest {
     }
 
     @Test
-    void fromWire_whenCalledConcurrently_shouldResolveCorrectly() throws Exception {
+    void fromWire_shouldResolveCorrectly_whenCalledConcurrently() throws Exception {
         final int threads = 16;
         final EnumUtils.WireIndex<ConcurrentEnum> index = EnumUtils.index(
                 ConcurrentEnum.class, constant -> constant.name().toLowerCase(Locale.ROOT));
         final CountDownLatch start = new CountDownLatch(1);
+        final List<Boolean> outcomes = new ArrayList<>();
         final ExecutorService executor = Executors.newFixedThreadPool(threads);
         try {
             final List<Future<Boolean>> results = new ArrayList<>();
@@ -190,11 +195,13 @@ class EnumUtilsTest {
             start.countDown();
 
             for (final Future<Boolean> result : results) {
-                assertThat(result.get(30, TimeUnit.SECONDS)).isTrue();
+                outcomes.add(result.get(30, TimeUnit.SECONDS));
             }
         } finally {
             executor.shutdownNow();
         }
+
+        assertThat(outcomes).hasSize(threads).containsOnly(true);
     }
 
     private static Stream<Arguments> wireHits() {

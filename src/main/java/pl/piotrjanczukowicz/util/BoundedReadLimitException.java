@@ -12,7 +12,7 @@ public class BoundedReadLimitException extends IOException {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final long limitBytes;
+    private final long limit;
 
     /**
      * Failure for a stream longer than {@code limit}.
@@ -21,7 +21,7 @@ public class BoundedReadLimitException extends IOException {
      */
     public BoundedReadLimitException(final long limit) {
         super("Stream exceeds the limit of %d bytes".formatted(limit));
-        this.limitBytes = limit;
+        this.limit = limit;
     }
 
     /**
@@ -30,6 +30,6 @@ public class BoundedReadLimitException extends IOException {
      * @return limit in bytes
      */
     public long limit() {
-        return limitBytes;
+        return limit;
     }
 }

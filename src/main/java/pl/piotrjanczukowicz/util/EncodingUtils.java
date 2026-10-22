@@ -26,7 +26,7 @@ public final class EncodingUtils {
      * @param value Base64 text to decode
      * @param message exception text
      * @return the decoded bytes
-     * @throws NullPointerException if {@code value} is {@code null}
+     * @throws NullPointerException if {@code value} or {@code message} is {@code null}
      * @throws IllegalArgumentException if {@code message} is blank, or {@code value} is not valid Base64
      */
     @SuppressWarnings("PMD.AvoidThrowingNewInstanceOfSameException")

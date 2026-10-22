@@ -1,7 +1,7 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.io.ByteArrayInputStream;
@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class IoUtilsTest {
 
@@ -18,7 +20,9 @@ class IoUtilsTest {
         final Constructor<IoUtils> constructor = IoUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
 
-        assertThatThrownBy(constructor::newInstance).hasCauseInstanceOf(UnsupportedOperationException.class);
+        final Throwable thrown = catchThrowable(constructor::newInstance);
+
+        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -46,7 +50,9 @@ class IoUtilsTest {
     void readAllBounded_shouldThrowLimitException_whenOneByteOverLimit() {
         final InputStream in = new ByteArrayInputStream(new byte[20_001]);
 
-        assertThatThrownBy(() -> IoUtils.readAllBounded(in, 20_000))
+        final Throwable thrown = catchThrowable(() -> IoUtils.readAllBounded(in, 20_000));
+
+        assertThat(thrown)
                 .isInstanceOfSatisfying(
                         BoundedReadLimitException.class,
                         exception -> assertThat(exception.limit()).isEqualTo(20_000));
@@ -106,6 +112,27 @@ class IoUtilsTest {
         assertThat(read).isEqualTo(body);
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {1, 8191, 8192, 8193, 16_384, 16_385, 32_768, 65_535, 65_536, 65_537, 1_048_576})
+    void readAllBounded_shouldReturnAllBytes_whenLengthUnknownAroundChunkBoundaries(final int length)
+            throws IOException {
+        final byte[] body = sequence(length);
+
+        final byte[] read = IoUtils.readAllBounded(new ByteArrayInputStream(body), 2_000_000);
+
+        assertThat(read).isEqualTo(body);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {8192, 16_384, 65_536})
+    void readAllBounded_shouldThrowLimitException_whenLengthUnknownAndOneByteOverLimitAtChunkBoundary(final int limit) {
+        final InputStream in = new ByteArrayInputStream(new byte[limit + 1]);
+
+        final Throwable thrown = catchThrowable(() -> IoUtils.readAllBounded(in, limit));
+
+        assertThat(thrown).isInstanceOf(BoundedReadLimitException.class);
+    }
+
     @Test
     void readAllBounded_shouldReturnAllBytes_whenBodyExactlyFillsBufferWithHint() throws IOException {
         final byte[] body = sequence(100);
@@ -128,7 +155,9 @@ class IoUtilsTest {
     void readAllBounded_shouldThrowLimitException_whenBodyLongerThanHintAndLimit() {
         final InputStream in = new ByteArrayInputStream(new byte[200]);
 
-        assertThatThrownBy(() -> IoUtils.readAllBounded(in, 100, 50))
+        final Throwable thrown = catchThrowable(() -> IoUtils.readAllBounded(in, 100, 50));
+
+        assertThat(thrown)
                 .isInstanceOfSatisfying(
                         BoundedReadLimitException.class,
                         exception -> assertThat(exception.limit()).isEqualTo(100));
@@ -138,17 +167,26 @@ class IoUtilsTest {
     void readAllBounded_shouldThrowLimitException_whenHintFillsLimitAndOneByteFollows() {
         final InputStream in = new ByteArrayInputStream(new byte[65]);
 
-        assertThatThrownBy(() -> IoUtils.readAllBounded(in, 64, 64)).isInstanceOf(BoundedReadLimitException.class);
+        final Throwable thrown = catchThrowable(() -> IoUtils.readAllBounded(in, 64, 64));
+
+        assertThat(thrown).isInstanceOf(BoundedReadLimitException.class);
     }
 
     @Test
-    void readAllBounded_shouldReturnAllBytes_whenStreamDeliversOneByteAtATime() throws IOException {
+    void readAllBounded_shouldReturnAllBytes_whenStreamDeliversOneByteAtATimeWithoutHint() throws IOException {
         final byte[] body = sequence(20_000);
 
         final byte[] chunked = IoUtils.readAllBounded(new TrickleStream(body), 100_000);
-        final byte[] sized = IoUtils.readAllBounded(new TrickleStream(body), 100_000, body.length);
 
         assertThat(chunked).isEqualTo(body);
+    }
+
+    @Test
+    void readAllBounded_shouldReturnAllBytes_whenStreamDeliversOneByteAtATimeWithHint() throws IOException {
+        final byte[] body = sequence(20_000);
+
+        final byte[] sized = IoUtils.readAllBounded(new TrickleStream(body), 100_000, body.length);
+
         assertThat(sized).isEqualTo(body);
     }
 
@@ -172,7 +210,9 @@ class IoUtilsTest {
     void readAllBounded_shouldThrowLimitException_whenLimitZeroAndStreamHasByte() {
         final InputStream in = new ByteArrayInputStream(new byte[1]);
 
-        assertThatThrownBy(() -> IoUtils.readAllBounded(in, 0))
+        final Throwable thrown = catchThrowable(() -> IoUtils.readAllBounded(in, 0));
+
+        assertThat(thrown)
                 .isInstanceOfSatisfying(
                         BoundedReadLimitException.class,
                         exception -> assertThat(exception.limit()).isZero());
@@ -191,36 +231,36 @@ class IoUtilsTest {
     void readAllBounded_shouldThrowNullPointerException_whenStreamNull() {
         final InputStream in = null;
 
-        assertThatThrownBy(() -> IoUtils.readAllBounded(in, 10))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("stream must not be null");
+        final Throwable thrown = catchThrowable(() -> IoUtils.readAllBounded(in, 10));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("stream must not be null");
     }
 
     @Test
     void readAllBounded_shouldThrowNullPointerException_whenStreamNullWithHint() {
         final InputStream in = null;
 
-        assertThatThrownBy(() -> IoUtils.readAllBounded(in, 10, 5))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("stream must not be null");
+        final Throwable thrown = catchThrowable(() -> IoUtils.readAllBounded(in, 10, 5));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("stream must not be null");
     }
 
     @Test
     void readAllBounded_shouldThrowIllegalArgumentException_whenLimitNegative() {
         final InputStream in = new ByteArrayInputStream(new byte[1]);
 
-        assertThatThrownBy(() -> IoUtils.readAllBounded(in, -1))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("maxBytes must be at least 0");
+        final Throwable thrown = catchThrowable(() -> IoUtils.readAllBounded(in, -1));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("maxBytes must be at least 0");
     }
 
     @Test
     void readAllBounded_shouldThrowIllegalArgumentException_whenLimitNegativeWithHint() {
         final InputStream in = new ByteArrayInputStream(new byte[1]);
 
-        assertThatThrownBy(() -> IoUtils.readAllBounded(in, -1, 1))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("maxBytes must be at least 0");
+        final Throwable thrown = catchThrowable(() -> IoUtils.readAllBounded(in, -1, 1));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("maxBytes must be at least 0");
     }
 
     @Test
@@ -230,8 +270,10 @@ class IoUtilsTest {
 
         IoUtils.closeSuppressing(resource, failure);
 
-        assertThat(resource.isClosed()).isTrue();
-        assertThat(failure.getSuppressed()).isEmpty();
+        assertSoftly(softly -> {
+            softly.assertThat(resource.isClosed()).isTrue();
+            softly.assertThat(failure.getSuppressed()).isEmpty();
+        });
     }
 
     @Test
@@ -296,9 +338,9 @@ class IoUtilsTest {
         final AutoCloseable resource = null;
         final IOException failure = new IOException("original");
 
-        assertThatThrownBy(() -> IoUtils.closeSuppressing(resource, failure))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("resource must not be null");
+        final Throwable thrown = catchThrowable(() -> IoUtils.closeSuppressing(resource, failure));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("resource must not be null");
     }
 
     @Test
@@ -306,10 +348,12 @@ class IoUtilsTest {
         final CloseTrackingStream resource = new CloseTrackingStream(new byte[0]);
         final Throwable failure = null;
 
-        assertThatThrownBy(() -> IoUtils.closeSuppressing(resource, failure))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("failure must not be null");
-        assertThat(resource.isClosed()).isFalse();
+        final Throwable thrown = catchThrowable(() -> IoUtils.closeSuppressing(resource, failure));
+
+        assertSoftly(softly -> {
+            softly.assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("failure must not be null");
+            softly.assertThat(resource.isClosed()).isFalse();
+        });
     }
 
     private static byte[] sequence(final int length) {
