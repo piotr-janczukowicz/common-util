@@ -29,7 +29,7 @@ public final class ConcurrencyUtils {
      *
      * @param delay how long to sleep, zero or positive
      * @param message exception text used if the sleep is interrupted
-     * @throws NullPointerException if {@code delay} is {@code null}
+     * @throws NullPointerException if {@code delay} or {@code message} is {@code null}
      * @throws IllegalArgumentException if {@code delay} is negative or {@code message} is blank
      * @throws InterruptedIOException if the thread is interrupted
      */
@@ -57,7 +57,7 @@ public final class ConcurrencyUtils {
      * @param interrupted the interrupt that was caught; becomes the cause of the result
      * @param message exception text of the result
      * @return an {@link InterruptedIOException} with {@code message} and {@code interrupted} as its cause
-     * @throws NullPointerException if {@code interrupted} is {@code null}
+     * @throws NullPointerException if {@code interrupted} or {@code message} is {@code null}
      * @throws IllegalArgumentException if {@code message} is blank
      */
     public static InterruptedIOException toInterruptedIo(final InterruptedException interrupted, final String message) {

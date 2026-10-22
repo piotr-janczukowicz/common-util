@@ -1,7 +1,8 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -14,33 +15,38 @@ import org.junit.jupiter.api.Test;
 class LazyValueTest {
 
     @Test
-    void get_whenCalledTwice_shouldCreateValueOnce() {
+    void get_shouldCreateValueOnce_whenCalledTwice() {
         final AtomicInteger calls = new AtomicInteger();
         final LazyValue<String> lazy = new LazyValue<>(() -> "value" + calls.incrementAndGet());
 
         final String first = lazy.get();
         final String second = lazy.get();
 
-        assertThat(first).isEqualTo("value1").isSameAs(second);
-        assertThat(calls).hasValue(1);
+        assertSoftly(softly -> {
+            softly.assertThat(first).isEqualTo("value1");
+            softly.assertThat(second).isSameAs(first);
+            softly.assertThat(calls).hasValue(1);
+        });
     }
 
     @Test
-    void constructor_whenSupplierIsNull_shouldThrow() {
-        assertThatThrownBy(() -> new LazyValue<>(null))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("supplier");
+    void constructor_shouldThrow_whenSupplierIsNull() {
+        final Throwable thrown = catchThrowable(() -> new LazyValue<>(null));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("supplier");
     }
 
     @Test
-    void get_whenSupplierReturnsNull_shouldThrow() {
+    void get_shouldThrow_whenSupplierReturnsNull() {
         final LazyValue<String> lazy = new LazyValue<>(() -> null);
 
-        assertThatThrownBy(lazy::get).isInstanceOf(NullPointerException.class).hasMessageContaining("value");
+        final Throwable thrown = catchThrowable(lazy::get);
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessageContaining("value");
     }
 
     @Test
-    void get_whenSupplierRaces_shouldKeepFirstValue() throws Exception {
+    void get_shouldKeepFirstValue_whenSupplierRaces() throws Exception {
         final CountDownLatch started = new CountDownLatch(2);
         final CountDownLatch release = new CountDownLatch(1);
         final AtomicInteger calls = new AtomicInteger();
@@ -48,7 +54,9 @@ class LazyValueTest {
             calls.incrementAndGet();
             started.countDown();
             try {
-                assertThat(release.await(5, TimeUnit.SECONDS)).isTrue();
+                if (!release.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("release timed out");
+                }
             } catch (final InterruptedException ex) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(ex);
@@ -59,13 +67,20 @@ class LazyValueTest {
         try {
             final Future<String> left = pool.submit(lazy::get);
             final Future<String> right = pool.submit(lazy::get);
-            assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
+            final boolean isStarted = started.await(5, TimeUnit.SECONDS);
             release.countDown();
 
-            assertThat(left.get()).isSameAs(right.get()).isEqualTo("value");
-            assertThat(calls).hasValue(2);
-            assertThat(lazy.get()).isEqualTo("value");
-            assertThat(calls).hasValue(2);
+            final String leftValue = left.get();
+            final String rightValue = right.get();
+            final String laterValue = lazy.get();
+
+            assertSoftly(softly -> {
+                softly.assertThat(isStarted).isTrue();
+                softly.assertThat(rightValue).isSameAs(leftValue);
+                softly.assertThat(leftValue).isEqualTo("value");
+                softly.assertThat(calls).hasValue(2);
+                softly.assertThat(laterValue).isEqualTo("value");
+            });
         } finally {
             pool.shutdown();
         }

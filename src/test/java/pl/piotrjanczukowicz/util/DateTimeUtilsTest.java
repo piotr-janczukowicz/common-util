@@ -1,7 +1,6 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.lang.reflect.Constructor;
@@ -17,15 +16,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 class DateTimeUtilsTest {
 
     @Test
-    void constructor_whenInstantiatedViaReflection_shouldThrow() throws Exception {
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
         final Constructor<DateTimeUtils> constructor = DateTimeUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
 
-        assertThatThrownBy(constructor::newInstance).hasCauseInstanceOf(UnsupportedOperationException.class);
+        final Throwable thrown = catchThrowable(constructor::newInstance);
+
+        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
-    void toIso_whenInstantHasNanos_shouldReturnUtcSeconds() {
+    void toIso_shouldReturnUtcSeconds_whenInstantHasNanos() {
         final Instant instant = Instant.parse("2024-01-01T00:00:00.123456789Z");
 
         final String formatted = DateTimeUtils.toIso(instant);
@@ -34,7 +35,7 @@ class DateTimeUtilsTest {
     }
 
     @Test
-    void toIso_whenAlreadyWholeSeconds_shouldReturnUtcSeconds() {
+    void toIso_shouldReturnUtcSeconds_whenAlreadyWholeSeconds() {
         final Instant instant = Instant.parse("2023-01-01T00:00:00Z");
 
         final String formatted = DateTimeUtils.toIso(instant);
@@ -43,12 +44,12 @@ class DateTimeUtilsTest {
     }
 
     @Test
-    void toIso_whenInstantNull_shouldThrow() {
+    void toIso_shouldThrow_whenInstantNull() {
         final Instant instant = null;
 
-        assertThatThrownBy(() -> DateTimeUtils.toIso(instant))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("instant must not be null");
+        final Throwable thrown = catchThrowable(() -> DateTimeUtils.toIso(instant));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("instant must not be null");
     }
 
     @Test
@@ -77,9 +78,9 @@ class DateTimeUtilsTest {
     void parseRfc1123_shouldThrowNullPointerException_whenValueNull() {
         final String value = null;
 
-        assertThatThrownBy(() -> DateTimeUtils.parseRfc1123(value))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("value must not be null");
+        final Throwable thrown = catchThrowable(() -> DateTimeUtils.parseRfc1123(value));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("value must not be null");
     }
 
     @ParameterizedTest
@@ -141,16 +142,18 @@ class DateTimeUtilsTest {
     void toRfc1123_shouldThrowNullPointerException_whenInstantNull() {
         final Instant instant = null;
 
-        assertThatThrownBy(() -> DateTimeUtils.toRfc1123(instant))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("instant must not be null");
+        final Throwable thrown = catchThrowable(() -> DateTimeUtils.toRfc1123(instant));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("instant must not be null");
     }
 
     @Test
     void parseRfc1123_shouldReturnOriginalInstant_whenRoundTripped() {
         final Instant instant = Instant.parse("2024-02-29T23:59:59Z");
 
-        final Optional<Instant> parsed = DateTimeUtils.parseRfc1123(DateTimeUtils.toRfc1123(instant));
+        final String text = DateTimeUtils.toRfc1123(instant);
+
+        final Optional<Instant> parsed = DateTimeUtils.parseRfc1123(text);
 
         assertThat(parsed).contains(instant);
     }

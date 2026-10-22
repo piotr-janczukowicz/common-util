@@ -1,7 +1,7 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.lang.reflect.Constructor;
 import java.util.stream.Stream;
@@ -15,68 +15,88 @@ import org.junit.jupiter.params.provider.ValueSource;
 class StringUtilsTest {
 
     @Test
-    void constructor_whenInstantiatedViaReflection_shouldThrow() throws Exception {
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
         final Constructor<StringUtils> constructor = StringUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
 
-        assertThatThrownBy(constructor::newInstance).hasCauseInstanceOf(UnsupportedOperationException.class);
+        final Throwable thrown = catchThrowable(constructor::newInstance);
+
+        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     @ParameterizedTest
     @NullSource
     @ValueSource(strings = {"", " ", "\t\n\r", "\u000B\f", "\u2003", "\u2003\u2003"})
     void isBlank_shouldReturnTrue_whenNullOrOnlyWhitespace(final String value) {
-        assertThat(StringUtils.isBlank(value)).isTrue();
+        final boolean isBlank = StringUtils.isBlank(value);
+
+        assertThat(isBlank).isTrue();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"\u00A0", "\u2007", "\u202F", "\u00A0 ", " a ", "\u2003a\u2003", "a"})
     void isBlank_shouldReturnFalse_whenContainsNonWhitespace(final String value) {
-        assertThat(StringUtils.isBlank(value)).isFalse();
+        final boolean isBlank = StringUtils.isBlank(value);
+
+        assertThat(isBlank).isFalse();
     }
 
     @ParameterizedTest
     @MethodSource("blankBuilders")
     void isBlank_shouldReturnTrue_whenNonStringCharSequenceIsOnlyWhitespace(final CharSequence value) {
-        assertThat(StringUtils.isBlank(value)).isTrue();
+        final boolean isBlank = StringUtils.isBlank(value);
+
+        assertThat(isBlank).isTrue();
     }
 
     @ParameterizedTest
     @MethodSource("notBlankBuilders")
     void isBlank_shouldReturnFalse_whenNonStringCharSequenceHasNonWhitespace(final CharSequence value) {
-        assertThat(StringUtils.isBlank(value)).isFalse();
+        final boolean isBlank = StringUtils.isBlank(value);
+
+        assertThat(isBlank).isFalse();
     }
 
     @ParameterizedTest
     @NullSource
     @ValueSource(strings = {"", " ", "\t\n\r", "\u000B\f", "\u2003", "\u2003\u2003"})
     void isNotBlank_shouldReturnFalse_whenNullOrOnlyWhitespace(final String value) {
-        assertThat(StringUtils.isNotBlank(value)).isFalse();
+        final boolean isNotBlank = StringUtils.isNotBlank(value);
+
+        assertThat(isNotBlank).isFalse();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"\u00A0", "\u2007", "\u202F", "\u00A0 ", " a ", "\u2003a\u2003", "a"})
     void isNotBlank_shouldReturnTrue_whenContainsNonWhitespace(final String value) {
-        assertThat(StringUtils.isNotBlank(value)).isTrue();
+        final boolean isNotBlank = StringUtils.isNotBlank(value);
+
+        assertThat(isNotBlank).isTrue();
     }
 
     @ParameterizedTest
     @MethodSource("blankBuilders")
     void isNotBlank_shouldReturnFalse_whenNonStringCharSequenceIsOnlyWhitespace(final CharSequence value) {
-        assertThat(StringUtils.isNotBlank(value)).isFalse();
+        final boolean isNotBlank = StringUtils.isNotBlank(value);
+
+        assertThat(isNotBlank).isFalse();
     }
 
     @ParameterizedTest
     @MethodSource("notBlankBuilders")
     void isNotBlank_shouldReturnTrue_whenNonStringCharSequenceHasNonWhitespace(final CharSequence value) {
-        assertThat(StringUtils.isNotBlank(value)).isTrue();
+        final boolean isNotBlank = StringUtils.isNotBlank(value);
+
+        assertThat(isNotBlank).isTrue();
     }
 
     @ParameterizedTest
     @MethodSource("stripToNullCases")
     void stripToNull_shouldStripWhitespaceOrReturnNull_whenGivenVariousInputs(
             final String value, final String expected) {
-        assertThat(StringUtils.stripToNull(value)).isEqualTo(expected);
+        final String stripped = StringUtils.stripToNull(value);
+
+        assertThat(stripped).isEqualTo(expected);
     }
 
     static Stream<CharSequence> blankBuilders() {

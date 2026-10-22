@@ -1,7 +1,6 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.io.ByteArrayInputStream;
@@ -16,15 +15,17 @@ import org.junit.jupiter.api.Test;
 class FileUtilsTest {
 
     @Test
-    void constructor_whenInstantiatedViaReflection_shouldThrow() throws Exception {
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
         final Constructor<FileUtils> constructor = FileUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
 
-        assertThatThrownBy(constructor::newInstance).hasCauseInstanceOf(UnsupportedOperationException.class);
+        final Throwable thrown = catchThrowable(constructor::newInstance);
+
+        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
-    void readString_whenResourceExists_shouldReturnContents() {
+    void readString_shouldReturnContents_whenResourceExists() {
         final Class<?> type = FileUtilsTest.class;
         final String fileName = "sample.txt";
 
@@ -34,7 +35,7 @@ class FileUtilsTest {
     }
 
     @Test
-    void readBytes_whenResourceExists_shouldReturnContents() {
+    void readBytes_shouldReturnContents_whenResourceExists() {
         final Class<?> type = FileUtilsTest.class;
         final String fileName = "sample.txt";
 
@@ -44,27 +45,27 @@ class FileUtilsTest {
     }
 
     @Test
-    void readString_whenTypeNull_shouldThrow() {
+    void readString_shouldThrow_whenTypeNull() {
         final Class<?> type = null;
         final String fileName = "sample.txt";
 
-        assertThatThrownBy(() -> FileUtils.readString(type, fileName))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("type must not be null");
+        final Throwable thrown = catchThrowable(() -> FileUtils.readString(type, fileName));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("type must not be null");
     }
 
     @Test
-    void readString_whenFileNameBlank_shouldThrow() {
+    void readString_shouldThrow_whenFileNameBlank() {
         final Class<?> type = FileUtilsTest.class;
         final String fileName = " ";
 
-        assertThatThrownBy(() -> FileUtils.readString(type, fileName))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("fileName must not be blank");
+        final Throwable thrown = catchThrowable(() -> FileUtils.readString(type, fileName));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("fileName must not be blank");
     }
 
     @Test
-    void readString_whenAbsoluteResourceMissing_shouldNameResourceWithoutPackage() {
+    void readString_shouldNameResourceWithoutPackage_whenAbsoluteResourceMissing() {
         final Class<?> type = FileUtilsTest.class;
         final String fileName = "/missing.txt";
 
@@ -76,17 +77,17 @@ class FileUtilsTest {
     }
 
     @Test
-    void readString_whenResourceMissing_shouldThrow() {
+    void readString_shouldThrow_whenResourceMissing() {
         final Class<?> type = FileUtilsTest.class;
         final String fileName = "missing.json";
 
-        assertThatThrownBy(() -> FileUtils.readString(type, fileName))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("missing.json");
+        final Throwable thrown = catchThrowable(() -> FileUtils.readString(type, fileName));
+
+        assertThat(thrown).isInstanceOf(IllegalStateException.class).hasMessageContaining("missing.json");
     }
 
     @Test
-    void readBytes_whenReadFails_shouldThrow() throws IOException {
+    void readBytes_shouldThrow_whenReadFails() throws IOException {
         final InputStream stream = new InputStream() {
             @Override
             public int read() throws IOException {
@@ -96,13 +97,13 @@ class FileUtilsTest {
         final Class<?> type = typeWithResource(stream);
         final String fileName = "any.bin";
 
-        assertThatThrownBy(() -> FileUtils.readBytes(type, fileName))
-                .isInstanceOf(UncheckedIOException.class)
-                .hasCauseInstanceOf(IOException.class);
+        final Throwable thrown = catchThrowable(() -> FileUtils.readBytes(type, fileName));
+
+        assertThat(thrown).isInstanceOf(UncheckedIOException.class).hasCauseInstanceOf(IOException.class);
     }
 
     @Test
-    void readBytes_whenCloseFails_shouldThrow() throws IOException {
+    void readBytes_shouldThrow_whenCloseFails() throws IOException {
         final InputStream stream = new ByteArrayInputStream(new byte[] {1}) {
             @Override
             public void close() throws IOException {
@@ -112,9 +113,9 @@ class FileUtilsTest {
         final Class<?> type = typeWithResource(stream);
         final String fileName = "any.bin";
 
-        assertThatThrownBy(() -> FileUtils.readBytes(type, fileName))
-                .isInstanceOf(UncheckedIOException.class)
-                .hasCauseInstanceOf(IOException.class);
+        final Throwable thrown = catchThrowable(() -> FileUtils.readBytes(type, fileName));
+
+        assertThat(thrown).isInstanceOf(UncheckedIOException.class).hasCauseInstanceOf(IOException.class);
     }
 
     private static Class<?> typeWithResource(final InputStream stream) throws IOException {

@@ -1,7 +1,8 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.io.InterruptedIOException;
 import java.lang.reflect.Constructor;
@@ -15,7 +16,9 @@ class ConcurrencyUtilsTest {
         final Constructor<ConcurrencyUtils> constructor = ConcurrencyUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
 
-        assertThatThrownBy(constructor::newInstance).hasCauseInstanceOf(UnsupportedOperationException.class);
+        final Throwable thrown = catchThrowable(constructor::newInstance);
+
+        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -45,11 +48,18 @@ class ConcurrencyUtilsTest {
         try {
             final Duration delay = Duration.ofSeconds(1);
 
-            assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(delay, "waiting stopped"))
-                    .isInstanceOf(InterruptedIOException.class)
-                    .hasMessage("waiting stopped")
-                    .hasCauseInstanceOf(InterruptedException.class);
-            assertThat(Thread.interrupted()).isTrue();
+            final Throwable thrown =
+                    catchThrowable(() -> ConcurrencyUtils.sleepInterruptibly(delay, "waiting stopped"));
+
+            final boolean isInterrupted = Thread.interrupted();
+
+            assertSoftly(softly -> {
+                softly.assertThat(thrown)
+                        .isInstanceOf(InterruptedIOException.class)
+                        .hasMessage("waiting stopped")
+                        .hasCauseInstanceOf(InterruptedException.class);
+                softly.assertThat(isInterrupted).isTrue();
+            });
         } finally {
             Thread.interrupted();
         }
@@ -59,38 +69,38 @@ class ConcurrencyUtilsTest {
     void sleepInterruptibly_shouldThrowNullPointerException_whenDelayNull() {
         final Duration delay = null;
 
-        assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(delay, "waiting stopped"))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("delay must not be null");
+        final Throwable thrown = catchThrowable(() -> ConcurrencyUtils.sleepInterruptibly(delay, "waiting stopped"));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("delay must not be null");
     }
 
     @Test
     void sleepInterruptibly_shouldThrowIllegalArgumentException_whenDelayNegative() {
         final Duration delay = Duration.ofSeconds(-1);
 
-        assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(delay, "waiting stopped"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("delay must not be negative");
+        final Throwable thrown = catchThrowable(() -> ConcurrencyUtils.sleepInterruptibly(delay, "waiting stopped"));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("delay must not be negative");
     }
 
     @Test
     void sleepInterruptibly_shouldThrowNullPointerException_whenMessageNull() {
         final String message = null;
 
-        assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(Duration.ZERO, message))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("message must not be null");
+        final Throwable thrown = catchThrowable(() -> ConcurrencyUtils.sleepInterruptibly(Duration.ZERO, message));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("message must not be null");
     }
 
     @Test
     void sleepInterruptibly_shouldThrowIllegalArgumentException_whenMessageBlank() {
-        assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(Duration.ZERO, " "))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("message must not be blank");
+        final Throwable thrown = catchThrowable(() -> ConcurrencyUtils.sleepInterruptibly(Duration.ZERO, " "));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("message must not be blank");
     }
 
     @Test
-    void toInterruptedIo_shouldReturnExceptionWithMessageAndCause_whenCalled() {
+    void toInterruptedIo_shouldReturnExceptionWithMessageAndCause() {
         final InterruptedException interrupted = new InterruptedException("stop");
 
         try {
@@ -103,7 +113,7 @@ class ConcurrencyUtilsTest {
     }
 
     @Test
-    void toInterruptedIo_shouldRestoreInterruptFlag_whenCalled() {
+    void toInterruptedIo_shouldRestoreInterruptFlag() {
         final InterruptedException interrupted = new InterruptedException("stop");
 
         try {
@@ -119,17 +129,17 @@ class ConcurrencyUtilsTest {
     void toInterruptedIo_shouldThrowNullPointerException_whenInterruptedNull() {
         final InterruptedException interrupted = null;
 
-        assertThatThrownBy(() -> ConcurrencyUtils.toInterruptedIo(interrupted, "gave up"))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("interrupted must not be null");
+        final Throwable thrown = catchThrowable(() -> ConcurrencyUtils.toInterruptedIo(interrupted, "gave up"));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("interrupted must not be null");
     }
 
     @Test
     void toInterruptedIo_shouldThrowIllegalArgumentException_whenMessageBlank() {
         final InterruptedException interrupted = new InterruptedException("stop");
 
-        assertThatThrownBy(() -> ConcurrencyUtils.toInterruptedIo(interrupted, ""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("message must not be blank");
+        final Throwable thrown = catchThrowable(() -> ConcurrencyUtils.toInterruptedIo(interrupted, ""));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("message must not be blank");
     }
 }

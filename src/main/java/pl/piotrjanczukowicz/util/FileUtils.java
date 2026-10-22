@@ -30,7 +30,7 @@ public final class FileUtils {
      * @param type class used to locate the resource
      * @param fileName resource name, not a filesystem path
      * @return resource contents
-     * @throws NullPointerException if {@code type} is {@code null}
+     * @throws NullPointerException if {@code type} or {@code fileName} is {@code null}
      * @throws IllegalArgumentException if {@code fileName} is blank
      * @throws IllegalStateException if the resource is missing
      * @throws UncheckedIOException if reading or closing the resource fails
@@ -45,7 +45,7 @@ public final class FileUtils {
      * @param type class used to locate the resource
      * @param fileName resource name, not a filesystem path
      * @return resource bytes
-     * @throws NullPointerException if {@code type} is {@code null}
+     * @throws NullPointerException if {@code type} or {@code fileName} is {@code null}
      * @throws IllegalArgumentException if {@code fileName} is blank
      * @throws IllegalStateException if the resource is missing
      * @throws UncheckedIOException if reading or closing the resource fails

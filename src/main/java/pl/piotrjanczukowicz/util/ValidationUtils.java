@@ -102,7 +102,7 @@ public final class ValidationUtils {
     public static Duration requirePositive(final Duration duration, final String fieldName) {
         requireNonNull(duration, fieldName);
 
-        if (!isPositive(duration)) {
+        if (!duration.isPositive()) {
             throw invalid(fieldName, MUST_BE_POSITIVE);
         }
         return duration;
@@ -805,7 +805,7 @@ public final class ValidationUtils {
     public static <T extends Collection<?>> T requireUniqueItems(final T values, final String fieldName) {
         requireNonNull(values, fieldName);
 
-        if (values.size() != new HashSet<>(values).size()) {
+        if (values.size() > 1 && values.size() != new HashSet<>(values).size()) {
             throw invalid(fieldName, "must not contain duplicates");
         }
         return values;

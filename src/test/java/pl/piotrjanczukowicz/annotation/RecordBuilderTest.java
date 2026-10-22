@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 class RecordBuilderTest {
 
     @Test
-    void build_whenAllFieldsSet_shouldEqualCanonicalConstructor() {
+    void build_shouldEqualCanonicalConstructor_whenAllFieldsSet() {
         final String name = "octocat";
         final int count = 42;
         final SampleRecord expected = new SampleRecord(name, count);

@@ -1,7 +1,6 @@
 package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.lang.reflect.Constructor;
@@ -13,15 +12,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 class EncodingUtilsTest {
 
     @Test
-    void constructor_whenInstantiatedViaReflection_shouldThrow() throws Exception {
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
         final Constructor<EncodingUtils> constructor = EncodingUtils.class.getDeclaredConstructor();
         constructor.setAccessible(true);
 
-        assertThatThrownBy(constructor::newInstance).hasCauseInstanceOf(UnsupportedOperationException.class);
+        final Throwable thrown = catchThrowable(constructor::newInstance);
+
+        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
-    void decodeBase64_whenValid_shouldReturnDecodedBytes() {
+    void decodeBase64_shouldReturnDecodedBytes_whenValid() {
         final String value = "aGVsbG8=";
         final String message = "not valid base64";
 
@@ -31,18 +32,20 @@ class EncodingUtilsTest {
     }
 
     @Test
-    void decodeBase64_whenInvalid_shouldThrowWithoutCause() {
+    void decodeBase64_shouldThrowWithoutCause_whenInvalid() {
         final String value = "not*base64";
         final String message = "not valid base64";
 
-        assertThatThrownBy(() -> EncodingUtils.decodeBase64(value, message))
+        final Throwable thrown = catchThrowable(() -> EncodingUtils.decodeBase64(value, message));
+
+        assertThat(thrown)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message)
                 .hasNoCause();
     }
 
     @Test
-    void decodeBase64_whenNull_shouldThrow() {
+    void decodeBase64_shouldThrow_whenNull() {
         final String value = null;
         final String message = "not valid base64";
 
@@ -52,7 +55,7 @@ class EncodingUtilsTest {
     }
 
     @Test
-    void decodeBase64_whenMessageNull_shouldThrow() {
+    void decodeBase64_shouldThrow_whenMessageNull() {
         final String value = "aGVsbG8=";
         final String message = null;
 
@@ -62,7 +65,7 @@ class EncodingUtilsTest {
     }
 
     @Test
-    void decodeBase64_whenMessageBlank_shouldThrow() {
+    void decodeBase64_shouldThrow_whenMessageBlank() {
         final String value = "aGVsbG8=";
         final String message = " ";
 
@@ -73,7 +76,7 @@ class EncodingUtilsTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"_-8=", "aGVs\r\nbG8="})
-    void decodeBase64_whenUrlSafeOrMimeInput_shouldThrow(final String value) {
+    void decodeBase64_shouldThrow_whenUrlSafeOrMimeInput(final String value) {
         final String message = "not valid base64";
 
         final Throwable thrown = catchThrowable(() -> EncodingUtils.decodeBase64(value, message));
