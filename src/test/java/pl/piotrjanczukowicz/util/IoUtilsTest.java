@@ -2,6 +2,7 @@ package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -22,7 +23,7 @@ class IoUtilsTest {
 
     @Test
     void maxBufferBytes_shouldBeIntegerMaxMinusEight_whenRead() {
-        assertThat(IoUtils.MAX_BUFFER_BYTES).isEqualTo(Integer.MAX_VALUE - 8L);
+        assertThat(Integer.MAX_VALUE - 8L).isEqualTo(IoUtils.MAX_BUFFER_BYTES);
     }
 
     @Test
@@ -257,6 +258,37 @@ class IoUtilsTest {
         IoUtils.closeSuppressing(resource, failure);
 
         assertThat(failure.getSuppressed()).containsExactly(closeFailure);
+    }
+
+    @Test
+    void closeSuppressing_shouldNotThrow_whenCloseThrowsTheFailureItself() {
+        final IOException failure = new IOException("original");
+        final AutoCloseable resource = () -> {
+            throw failure;
+        };
+
+        IoUtils.closeSuppressing(resource, failure);
+
+        assertThat(failure.getSuppressed()).isEmpty();
+    }
+
+    @Test
+    void closeSuppressing_shouldRestoreInterruptFlag_whenCloseIsInterrupted() {
+        final InterruptedException closeFailure = new InterruptedException("interrupted");
+        final AutoCloseable resource = () -> {
+            throw closeFailure;
+        };
+        final IOException failure = new IOException("original");
+        try {
+            IoUtils.closeSuppressing(resource, failure);
+
+            assertSoftly(softly -> {
+                softly.assertThat(Thread.currentThread().isInterrupted()).isTrue();
+                softly.assertThat(failure.getSuppressed()).containsExactly(closeFailure);
+            });
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     @Test

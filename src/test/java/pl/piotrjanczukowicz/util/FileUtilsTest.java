@@ -2,6 +2,7 @@ package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,27 +26,27 @@ class FileUtilsTest {
     @Test
     void readString_whenResourceExists_shouldReturnContents() {
         final Class<?> type = FileUtilsTest.class;
-        final String fileName = "sample.json";
+        final String fileName = "sample.txt";
 
         final String text = FileUtils.readString(type, fileName);
 
-        assertThat(text).contains("ok");
+        assertThat(text).isEqualTo("zażółć ✓");
     }
 
     @Test
     void readBytes_whenResourceExists_shouldReturnContents() {
         final Class<?> type = FileUtilsTest.class;
-        final String fileName = "sample.json";
+        final String fileName = "sample.txt";
 
         final byte[] bytes = FileUtils.readBytes(type, fileName);
 
-        assertThat(new String(bytes, StandardCharsets.UTF_8)).contains("ok");
+        assertThat(bytes).isEqualTo("zażółć ✓".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
     void readString_whenTypeNull_shouldThrow() {
         final Class<?> type = null;
-        final String fileName = "sample.json";
+        final String fileName = "sample.txt";
 
         assertThatThrownBy(() -> FileUtils.readString(type, fileName))
                 .isInstanceOf(NullPointerException.class)
@@ -60,6 +61,18 @@ class FileUtilsTest {
         assertThatThrownBy(() -> FileUtils.readString(type, fileName))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("fileName must not be blank");
+    }
+
+    @Test
+    void readString_whenAbsoluteResourceMissing_shouldNameResourceWithoutPackage() {
+        final Class<?> type = FileUtilsTest.class;
+        final String fileName = "/missing.txt";
+
+        final Throwable thrown = catchThrowable(() -> FileUtils.readString(type, fileName));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Missing classpath resource /missing.txt");
     }
 
     @Test

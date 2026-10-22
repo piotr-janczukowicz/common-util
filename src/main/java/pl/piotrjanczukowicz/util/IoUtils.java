@@ -13,14 +13,16 @@ import java.util.List;
  * Stream helpers.
  *
  * <p>{@link #readAllBounded(InputStream, long)} reads a stream without letting it grow past a byte limit. A body of
- * known length is read straight into one buffer sized from the announced length. A body of unknown length is read into
- * a list of chunks and copied once into the result. The result is always one {@code byte[]}, so the effective limit
- * never exceeds {@link #MAX_BUFFER_BYTES} (the largest array the JVM reliably allocates) even when a larger limit is
- * passed; a longer stream then fails with {@link BoundedReadLimitException} instead of an {@link OutOfMemoryError}.
+ * known length is read straight into one buffer sized from the announced length, up to 8 MiB. A body of unknown length
+ * is read into a list of chunks and copied once into the result. The result is always one {@code byte[]}, so the
+ * effective limit never exceeds {@link #MAX_BUFFER_BYTES} (the largest array the JVM reliably allocates) even when a
+ * larger limit is passed; a longer stream then fails with {@link BoundedReadLimitException} instead of an
+ * {@link OutOfMemoryError}.
  *
  * <p>{@link #closeSuppressing(AutoCloseable, Throwable)} closes a resource while keeping the failure that caused the
  * cleanup.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class IoUtils {
 
     /** Largest stream {@link #readAllBounded(InputStream, long)} buffers: {@code Integer.MAX_VALUE - 8} bytes. */
@@ -50,7 +52,7 @@ public final class IoUtils {
      * @return all bytes read
      * @throws NullPointerException if {@code stream} is {@code null}
      * @throws IllegalArgumentException if {@code maxBytes} is negative
-     * @throws BoundedReadLimitException if more than the effective limit of bytes are available
+     * @throws BoundedReadLimitException if more than the effective limit of bytes is available
      * @throws IOException if reading fails
      */
     public static byte[] readAllBounded(final InputStream stream, final long maxBytes) throws IOException {
@@ -58,7 +60,7 @@ public final class IoUtils {
     }
 
     /**
-     * Reads {@code stream} to its end, sizing the buffer from {@code expectedLength} so a stream of that size is read
+     * Reads {@code stream} to its end, sizing the buffer from {@code expectedLength} so a stream of up to 8 MiB is read
      * without regrowing or copying.
      *
      * <p>The hint is only a hint: a longer stream still grows the buffer and a shorter one is trimmed. Without a
@@ -72,7 +74,7 @@ public final class IoUtils {
      * @return all bytes read
      * @throws NullPointerException if {@code stream} is {@code null}
      * @throws IllegalArgumentException if {@code maxBytes} is negative
-     * @throws BoundedReadLimitException if more than the effective limit of bytes are available
+     * @throws BoundedReadLimitException if more than the effective limit of bytes is available
      * @throws IOException if reading fails
      */
     public static byte[] readAllBounded(final InputStream stream, final long maxBytes, final long expectedLength)
@@ -88,21 +90,33 @@ public final class IoUtils {
      * Closes {@code resource}. An exception thrown by {@link AutoCloseable#close()} is added to {@code failure} as a
      * suppressed exception instead of being thrown, so the original failure stays the one that propagates.
      *
-     * <p>When {@code close()} succeeds, {@code failure} is left unchanged. This method never throws because of the
-     * close; an {@link Error} thrown by {@code close()} is not caught.
+     * <p>When {@code close()} succeeds, {@code failure} is left unchanged. When {@code close()} throws {@code failure}
+     * itself, nothing is added, since a throwable cannot suppress itself. When {@code close()} is interrupted, the
+     * interrupt flag of the current thread is restored. This method never throws because of the close; an {@link Error}
+     * thrown by {@code close()} is not caught.
      *
      * @param resource resource to close; a {@code null} value is rejected, not ignored
      * @param failure failure that caused the cleanup; receives any close exception as suppressed
      * @throws NullPointerException if {@code resource} or {@code failure} is {@code null}
      */
-    @SuppressWarnings("PMD.AvoidCatchingGenericException")
+    @SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.DoNotUseThreads"}) // Restores the interrupt flag.
     public static void closeSuppressing(final AutoCloseable resource, final Throwable failure) {
         requireNonNull(resource, "resource");
         requireNonNull(failure, "failure");
 
         try {
             resource.close();
+        } catch (final InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            suppress(failure, interrupted);
         } catch (final Exception closeFailure) {
+            suppress(failure, closeFailure);
+        }
+    }
+
+    @SuppressWarnings("PMD.CompareObjectsWithEquals") // A throwable cannot suppress itself; identity is the point.
+    private static void suppress(final Throwable failure, final Exception closeFailure) {
+        if (closeFailure != failure) {
             failure.addSuppressed(closeFailure);
         }
     }
@@ -193,7 +207,7 @@ public final class IoUtils {
     }
 
     // Math.clamp would throw for a limit below BUFFER_SIZE (its minimum would exceed its maximum); here the limit wins.
-    @SuppressWarnings("java:S6885")
+    @SuppressWarnings({"java:S6885", "MathClampMigration"})
     private static byte[] grow(final byte[] buffer, final int total, final long limit) throws IOException {
         if (total >= limit) {
             throw new BoundedReadLimitException(limit);

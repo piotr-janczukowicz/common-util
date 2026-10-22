@@ -4,13 +4,13 @@ Java utilities and annotations for callers: fail-fast argument checks, ISO-8601 
 
 ## Dependency
 
-Java library. Add Maven coordinates `pl.piotrjanczukowicz:common-util:1.0.0-SNAPSHOT`.
+Java library. Add Maven coordinates `pl.piotrjanczukowicz:common-util:1`.
 
 ```xml
 <dependency>
   <groupId>pl.piotrjanczukowicz</groupId>
   <artifactId>common-util</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1</version>
 </dependency>
 ```
 
@@ -26,4 +26,4 @@ String name = ValidationUtils.requireNotBlank(rawName, "name");
 
 ## License
 
-Apache License, Version 2.0
+MIT License

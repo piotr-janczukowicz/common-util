@@ -8,7 +8,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -18,6 +17,12 @@ import java.util.Optional;
  * 1123 text, the form used by HTTP dates, to and from {@link Instant}.
  */
 public final class DateTimeUtils {
+
+    /** Epoch second of {@code 0000-01-01T00:00:00Z}, the earliest instant RFC 1123 text can print. */
+    private static final long MIN_SECOND = -62_167_219_200L;
+
+    /** Epoch second of {@code 9999-12-31T23:59:59Z}, the latest instant RFC 1123 text can print. */
+    private static final long MAX_SECOND = 253_402_300_799L;
 
     private DateTimeUtils() {
         throw new UnsupportedOperationException("Utility class");
@@ -35,7 +40,7 @@ public final class DateTimeUtils {
      * @throws NullPointerException if {@code instant} is {@code null}
      */
     public static String toIso(final Instant instant) {
-        Objects.requireNonNull(instant, "instant must not be null");
+        requireNonNull(instant, "instant");
 
         return DateTimeFormatter.ISO_INSTANT.format(instant.truncatedTo(ChronoUnit.SECONDS));
     }
@@ -73,9 +78,14 @@ public final class DateTimeUtils {
      * @param instant instant to format
      * @return RFC 1123 text in UTC
      * @throws NullPointerException if {@code instant} is {@code null}
+     * @throws IllegalArgumentException if {@code instant} falls outside the years 0000 to 9999, which RFC 1123 text
+     *     cannot represent
      */
     public static String toRfc1123(final Instant instant) {
         requireNonNull(instant, "instant");
+        if (instant.getEpochSecond() < MIN_SECOND || instant.getEpochSecond() > MAX_SECOND) {
+            throw new IllegalArgumentException("instant must be between 0000-01-01T00:00:00Z and 9999-12-31T23:59:59Z");
+        }
 
         return DateTimeFormatter.RFC_1123_DATE_TIME.format(instant.atOffset(ZoneOffset.UTC));
     }

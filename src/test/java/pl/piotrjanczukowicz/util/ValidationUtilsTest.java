@@ -3,6 +3,7 @@ package pl.piotrjanczukowicz.util;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.lang.reflect.Constructor;
 import java.time.Duration;
@@ -361,6 +362,60 @@ class ValidationUtilsTest {
     }
 
     @Test
+    void requireSizeBetween_whenCollectionBoundsInverted_shouldThrow() {
+        final List<String> values = List.of("a", "b");
+        final int minimum = 5;
+        final int maximum = 2;
+        final String fieldName = "items";
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, fieldName));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("items has bounds in the wrong order: minimum 5 is greater than maximum 2");
+    }
+
+    @Test
+    void requireSizeBetween_whenMapBoundsInverted_shouldThrow() {
+        final Map<String, String> values = Map.of("a", "1");
+        final int minimum = 5;
+        final int maximum = 2;
+        final String fieldName = "entries";
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireSizeBetween(values, minimum, maximum, fieldName));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("entries has bounds in the wrong order: minimum 5 is greater than maximum 2");
+    }
+
+    @Test
+    void requireAtLeast_whenDoubleMinimumIsPositiveInfinity_shouldThrow() {
+        final double value = 5.0;
+        final double minimum = Double.POSITIVE_INFINITY;
+        final String fieldName = "ratio";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtLeast(value, minimum, fieldName));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("ratio must be finite and at least Infinity");
+    }
+
+    @Test
+    void requireAtLeast_whenDoubleValueIsNegativeZeroAndMinimumPositiveZero_shouldReturnValue() {
+        final double value = -0.0;
+        final double minimum = 0.0;
+        final String fieldName = "ratio";
+
+        final double result = ValidationUtils.requireAtLeast(value, minimum, fieldName);
+
+        assertThat(result).isEqualTo(value);
+    }
+
+    @Test
     void requireSizeBetween_whenSizeBelowMinimum_shouldThrow() {
         final List<String> values = List.of("a");
         final int minimum = 2;
@@ -599,46 +654,209 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireGreaterOrEqual_whenValueAtLeastMinimum_shouldPass() {
+    void requireAtLeast_whenDurationAtLeastMinimum_shouldReturnValue() {
         final Duration value = Duration.ofSeconds(2);
         final Duration minimum = Duration.ofSeconds(2);
         final String fieldName = "wait";
 
-        assertThatCode(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, fieldName))
-                .doesNotThrowAnyException();
+        final Duration result = ValidationUtils.requireAtLeast(value, minimum, fieldName);
+
+        assertThat(result).isSameAs(value);
     }
 
     @Test
-    void requireGreaterOrEqual_whenValueBelowMinimum_shouldThrow() {
+    void requireAtLeast_whenDurationBelowMinimum_shouldThrow() {
         final Duration value = Duration.ofSeconds(1);
         final Duration minimum = Duration.ofSeconds(2);
         final String fieldName = "wait";
 
-        assertThatThrownBy(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, fieldName))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("wait must be at least PT2S");
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtLeast(value, minimum, fieldName));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("wait must be at least PT2S");
     }
 
     @Test
-    void requireGreaterOrEqual_whenValueNull_shouldThrow() {
+    void requireAtLeast_whenDurationNull_shouldThrow() {
         final Duration value = null;
         final Duration minimum = Duration.ZERO;
         final String fieldName = "wait";
 
-        assertThatThrownBy(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, fieldName))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("wait must not be null");
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtLeast(value, minimum, fieldName));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("wait must not be null");
     }
 
     @Test
-    void requireGreaterOrEqual_whenMinimumNull_shouldThrow() {
+    void requireAtLeast_whenMinimumDurationNull_shouldThrow() {
         final Duration value = Duration.ZERO;
         final Duration minimum = null;
         final String fieldName = "wait";
 
-        assertThatThrownBy(() -> ValidationUtils.requireGreaterOrEqual(value, minimum, fieldName))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("minimum must not be null");
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtLeast(value, minimum, fieldName));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("minimum must not be null");
+    }
+
+    @Test
+    void requireAtLeast_whenDoubleMinimumIsNaN_shouldThrow() {
+        final double value = 1.0;
+        final double minimum = Double.NaN;
+        final String fieldName = "ratio";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtLeast(value, minimum, fieldName));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("ratio has a NaN minimum");
+    }
+
+    @Test
+    void requireAtMost_whenDoubleMaximumIsNaN_shouldThrow() {
+        final double value = 1.0;
+        final double maximum = Double.NaN;
+        final String fieldName = "ratio";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireAtMost(value, maximum, fieldName));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("ratio has a NaN maximum");
+    }
+
+    @Test
+    void requireBetween_whenIntBoundsSwapped_shouldThrow() {
+        final int value = 5;
+        final String fieldName = "count";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireBetween(value, 10, 1, fieldName));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("count has bounds in the wrong order: minimum 10 is greater than maximum 1");
+    }
+
+    @Test
+    void requireBetween_whenLongBoundsSwapped_shouldThrow() {
+        final long value = 5L;
+        final String fieldName = "count";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireBetween(value, 10L, 1L, fieldName));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("count has bounds in the wrong order: minimum 10 is greater than maximum 1");
+    }
+
+    @Test
+    void requireBetween_whenDoubleBoundsSwapped_shouldThrow() {
+        final double value = 5.0;
+        final String fieldName = "ratio";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireBetween(value, 10.0, 1.0, fieldName));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("ratio has bounds in the wrong order: minimum 10.0 is greater than maximum 1.0");
+    }
+
+    @Test
+    void requireBetween_whenDoubleMinimumIsNaN_shouldThrow() {
+        final double value = 5.0;
+        final String fieldName = "ratio";
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireBetween(value, Double.NaN, 10.0, fieldName));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("ratio has a NaN minimum");
+    }
+
+    @Test
+    void requireBetween_whenDoubleMaximumIsNaN_shouldThrow() {
+        final double value = 5.0;
+        final String fieldName = "ratio";
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireBetween(value, 1.0, Double.NaN, fieldName));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("ratio has a NaN maximum");
+    }
+
+    @Test
+    void requireFullMatch_whenWholeValueMatches_shouldReturnValue() {
+        final String value = "abc";
+        final Pattern pattern = Pattern.compile("[a-z]+");
+        final String fieldName = "code";
+
+        final String result = ValidationUtils.requireFullMatch(value, pattern, fieldName);
+
+        assertThat(result).isSameAs(value);
+    }
+
+    @Test
+    void requireFullMatch_whenOnlyPartOfValueMatches_shouldThrow() {
+        final String value = "abc; DROP";
+        final Pattern pattern = Pattern.compile("[a-z]+");
+        final String fieldName = "code";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireFullMatch(value, pattern, fieldName));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("code must match the required pattern");
+    }
+
+    @Test
+    void requireFullMatchIfPresent_whenWholeValueMatches_shouldReturnValue() {
+        final String value = "abc";
+        final Pattern pattern = Pattern.compile("[a-z]+");
+        final String fieldName = "code";
+
+        final String result = ValidationUtils.requireFullMatchIfPresent(value, pattern, fieldName);
+
+        assertThat(result).isSameAs(value);
+    }
+
+    @Test
+    void requireFullMatchIfPresent_whenOnlyPartOfValueMatches_shouldThrow() {
+        final String value = "abc; DROP";
+        final Pattern pattern = Pattern.compile("[a-z]+");
+        final String fieldName = "code";
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireFullMatchIfPresent(value, pattern, fieldName));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("code must match the required pattern");
+    }
+
+    @Test
+    void requireFullMatchIfPresent_whenValueNull_shouldReturnNull() {
+        final String value = null;
+        final Pattern pattern = Pattern.compile("[a-z]+");
+        final String fieldName = "code";
+
+        final String result = ValidationUtils.requireFullMatchIfPresent(value, pattern, fieldName);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void requireFullMatch_whenValueNull_shouldThrow() {
+        final String value = null;
+        final Pattern pattern = Pattern.compile("[a-z]+");
+        final String fieldName = "code";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireFullMatch(value, pattern, fieldName));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("code must not be null");
+    }
+
+    @Test
+    void requireFullMatch_whenPatternNull_shouldThrow() {
+        final String value = "abc";
+        final Pattern pattern = null;
+        final String fieldName = "code";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireFullMatch(value, pattern, fieldName));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("pattern must not be null");
     }
 
     @Test
@@ -1509,7 +1727,13 @@ class ValidationUtilsTest {
     void requireExactlyOne_whenNoneOrBothOfTwoPresent_shouldThrow(final boolean first, final boolean second) {
         final String fieldName = "options";
 
-        assertThatThrownBy(() -> ValidationUtils.requireExactlyOne(present(first), present(second), fieldName))
+        final Object firstValue = present(first);
+        final Object secondValue = present(second);
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireExactlyOne(firstValue, secondValue, fieldName));
+
+        assertThat(thrown)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("options must have exactly one value present");
     }
@@ -1531,8 +1755,14 @@ class ValidationUtilsTest {
             final boolean first, final boolean second, final boolean third) {
         final String fieldName = "options";
 
-        assertThatThrownBy(() ->
-                        ValidationUtils.requireExactlyOne(present(first), present(second), present(third), fieldName))
+        final Object firstValue = present(first);
+        final Object secondValue = present(second);
+        final Object thirdValue = present(third);
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireExactlyOne(firstValue, secondValue, thirdValue, fieldName));
+
+        assertThat(thrown)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("options must have exactly one value present");
     }
@@ -1550,7 +1780,13 @@ class ValidationUtilsTest {
     void requireAtMostOne_whenBothOfTwoPresent_shouldThrow() {
         final String fieldName = "options";
 
-        assertThatThrownBy(() -> ValidationUtils.requireAtMostOne(present(true), present(true), fieldName))
+        final Object firstValue = present(true);
+        final Object secondValue = present(true);
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireAtMostOne(firstValue, secondValue, fieldName));
+
+        assertThat(thrown)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("options must have at most one value present");
     }
@@ -1572,8 +1808,14 @@ class ValidationUtilsTest {
             final boolean first, final boolean second, final boolean third) {
         final String fieldName = "options";
 
-        assertThatThrownBy(() ->
-                        ValidationUtils.requireAtMostOne(present(first), present(second), present(third), fieldName))
+        final Object firstValue = present(first);
+        final Object secondValue = present(second);
+        final Object thirdValue = present(third);
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireAtMostOne(firstValue, secondValue, thirdValue, fieldName));
+
+        assertThat(thrown)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("options must have at most one value present");
     }
@@ -1591,7 +1833,13 @@ class ValidationUtilsTest {
     void requireAtLeastOne_whenNoneOfTwoPresent_shouldThrow() {
         final String fieldName = "options";
 
-        assertThatThrownBy(() -> ValidationUtils.requireAtLeastOne(present(false), present(false), fieldName))
+        final Object firstValue = present(false);
+        final Object secondValue = present(false);
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireAtLeastOne(firstValue, secondValue, fieldName));
+
+        assertThat(thrown)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("options must have at least one value present");
     }
@@ -1619,8 +1867,14 @@ class ValidationUtilsTest {
     void requireAtLeastOne_whenNoneOfThreePresent_shouldThrow() {
         final String fieldName = "options";
 
-        assertThatThrownBy(() ->
-                        ValidationUtils.requireAtLeastOne(present(false), present(false), present(false), fieldName))
+        final Object firstValue = present(false);
+        final Object secondValue = present(false);
+        final Object thirdValue = present(false);
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireAtLeastOne(firstValue, secondValue, thirdValue, fieldName));
+
+        assertThat(thrown)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("options must have at least one value present");
     }
@@ -1639,7 +1893,13 @@ class ValidationUtilsTest {
     void requireBothOrNeither_whenOnlyOnePresent_shouldThrow(final boolean first, final boolean second) {
         final String fieldName = "options";
 
-        assertThatThrownBy(() -> ValidationUtils.requireBothOrNeither(present(first), present(second), fieldName))
+        final Object firstValue = present(first);
+        final Object secondValue = present(second);
+
+        final Throwable thrown =
+                catchThrowable(() -> ValidationUtils.requireBothOrNeither(firstValue, secondValue, fieldName));
+
+        assertThat(thrown)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("options must have both values present or both absent");
     }

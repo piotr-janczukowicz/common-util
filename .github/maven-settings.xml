@@ -23,25 +23,16 @@
         <repository>
           <id>github-common-parent</id>
           <url>https://maven.pkg.github.com/piotr-janczukowicz/common-parent</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
         </repository>
         <repository>
           <id>github-common-dependencies</id>
           <url>https://maven.pkg.github.com/piotr-janczukowicz/common-dependencies</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
         </repository>
       </repositories>
       <pluginRepositories>
         <pluginRepository>
           <id>github-common-parent</id>
           <url>https://maven.pkg.github.com/piotr-janczukowicz/common-parent</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
         </pluginRepository>
       </pluginRepositories>
     </profile>

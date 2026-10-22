@@ -2,6 +2,7 @@ package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.lang.reflect.Constructor;
 import java.time.Instant;
@@ -9,6 +10,9 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class DateTimeUtilsTest {
 
@@ -61,23 +65,10 @@ class DateTimeUtilsTest {
         assertThat(parsed).contains(Instant.parse("2008-06-03T11:05:30Z"));
     }
 
-    @Test
-    void parseRfc1123_shouldReturnEmpty_whenTextInvalid() {
-        final Optional<Instant> parsed = DateTimeUtils.parseRfc1123("not a date");
-
-        assertThat(parsed).isEmpty();
-    }
-
-    @Test
-    void parseRfc1123_shouldReturnEmpty_whenRfc850Date() {
-        final Optional<Instant> parsed = DateTimeUtils.parseRfc1123("Sunday, 06-Nov-94 08:49:37 GMT");
-
-        assertThat(parsed).isEmpty();
-    }
-
-    @Test
-    void parseRfc1123_shouldReturnEmpty_whenAsctimeDate() {
-        final Optional<Instant> parsed = DateTimeUtils.parseRfc1123("Sun Nov  6 08:49:37 1994");
+    @ParameterizedTest
+    @ValueSource(strings = {"not a date", "Sunday, 06-Nov-94 08:49:37 GMT", "Sun Nov  6 08:49:37 1994"})
+    void parseRfc1123_shouldReturnEmpty_whenTextNotRfc1123(final String text) {
+        final Optional<Instant> parsed = DateTimeUtils.parseRfc1123(text);
 
         assertThat(parsed).isEmpty();
     }
@@ -91,22 +82,50 @@ class DateTimeUtilsTest {
                 .hasMessage("value must not be null");
     }
 
-    @Test
-    void toRfc1123_shouldFormatInUtc_whenInstantGiven() {
-        final Instant instant = Instant.parse("2008-06-03T11:05:30Z");
+    @ParameterizedTest
+    @CsvSource(
+            delimiter = '|',
+            value = {
+                "2008-06-03T11:05:30Z|Tue, 3 Jun 2008 11:05:30 GMT",
+                "2008-06-03T11:05:30.987654321Z|Tue, 3 Jun 2008 11:05:30 GMT",
+                "9999-12-31T23:59:59Z|Fri, 31 Dec 9999 23:59:59 GMT",
+                "9999-12-31T23:59:59.999999999Z|Fri, 31 Dec 9999 23:59:59 GMT",
+                "0000-01-01T00:00:00Z|Sat, 1 Jan 0000 00:00:00 GMT"
+            })
+    void toRfc1123_shouldFormatInUtc_whenInstantGiven(final String text, final String expected) {
+        final Instant instant = Instant.parse(text);
 
         final String formatted = DateTimeUtils.toRfc1123(instant);
 
-        assertThat(formatted).isEqualTo("Tue, 3 Jun 2008 11:05:30 GMT");
+        assertThat(formatted).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"+10000-01-01T00:00:00Z", "-0001-12-31T23:59:59Z", "+1000000000-12-31T23:59:59Z"})
+    void toRfc1123_shouldThrowIllegalArgumentException_whenYearOutsideRfc1123Range(final String text) {
+        final Instant instant = Instant.parse(text);
+
+        final Throwable thrown = catchThrowable(() -> DateTimeUtils.toRfc1123(instant));
+
+        assertThat(thrown)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("instant must be between 0000-01-01T00:00:00Z and 9999-12-31T23:59:59Z");
     }
 
     @Test
-    void toRfc1123_shouldDropFractionalSeconds_whenInstantHasNanos() {
-        final Instant instant = Instant.parse("2008-06-03T11:05:30.987654321Z");
+    void toRfc1123_shouldThrowIllegalArgumentException_whenInstantMax() {
+        final Instant instant = Instant.MAX;
 
-        final String formatted = DateTimeUtils.toRfc1123(instant);
+        final Throwable thrown = catchThrowable(() -> DateTimeUtils.toRfc1123(instant));
 
-        assertThat(formatted).isEqualTo("Tue, 3 Jun 2008 11:05:30 GMT");
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void parseRfc1123_shouldReturnEmpty_whenDayOfWeekDoesNotMatchDate() {
+        final Optional<Instant> parsed = DateTimeUtils.parseRfc1123("Mon, 3 Jun 2008 11:05:30 GMT");
+
+        assertThat(parsed).isEmpty();
     }
 
     @Test

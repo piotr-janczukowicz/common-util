@@ -12,18 +12,25 @@ import org.jspecify.annotations.Nullable;
 /**
  * Argument validation helpers.
  *
- * <p>Fail-fast checks for method arguments and configuration. Each {@code require*} method either returns the same
- * instance (so the result can be assigned) or throws. {@code fieldName} names the checked value; the exception text is
- * built from it, for example {@code "timeout must be positive"}. {@code null} is rejected with
- * {@link NullPointerException}; other violations use {@link IllegalArgumentException}. Numeric bounds are inclusive
- * unless a method says otherwise.
+ * <p>Fail-fast checks for method arguments and configuration. Each {@code require*} method either returns the checked
+ * value (so the result can be assigned) or throws; the exceptions are the {@code requireExactlyOne},
+ * {@code requireAtMostOne}, {@code requireAtLeastOne} and {@code requireBothOrNeither} group checks, which return
+ * nothing. {@code fieldName} names the checked value; the exception text is built from it, for example {@code "timeout
+ * must be positive"}. {@code null} is rejected with {@link NullPointerException}; other violations use
+ * {@link IllegalArgumentException}. Numeric bounds are inclusive unless a method says otherwise.
  */
-@SuppressWarnings("PMD.ExcessivePublicCount")
+@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
 public final class ValidationUtils {
 
     private static final int ONE_PRESENT = 1;
+    private static final String MINIMUM = "minimum";
+    private static final String MAXIMUM = "maximum";
     private static final String ELEMENTS = " elements";
     private static final String ENTRIES = " entries";
+    private static final String MUST_BE_AT_LEAST = "must be at least ";
+    private static final String MUST_BE_AT_MOST = "must be at most ";
+    private static final String MUST_BE_POSITIVE = "must be positive";
+    private static final String MUST_NOT_BE_EMPTY = "must not be empty";
 
     private ValidationUtils() {
         throw new UnsupportedOperationException("Utility class");
@@ -57,9 +64,6 @@ public final class ValidationUtils {
      * @throws NullPointerException if {@code value} is {@code null}
      * @throws IllegalArgumentException if {@code value} is blank
      */
-    @SuppressFBWarnings(
-            value = "NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE",
-            justification = "null is rejected with NullPointerException")
     public static String requireNotBlank(@Nullable final String value, final String fieldName) {
         final String nonNull = requireNonNull(value, fieldName);
         if (nonNull.isBlank()) {
@@ -99,7 +103,7 @@ public final class ValidationUtils {
         requireNonNull(duration, fieldName);
 
         if (!isPositive(duration)) {
-            throw invalid(fieldName, "must be positive");
+            throw invalid(fieldName, MUST_BE_POSITIVE);
         }
         return duration;
     }
@@ -114,7 +118,7 @@ public final class ValidationUtils {
      */
     public static int requirePositive(final int value, final String fieldName) {
         if (value <= 0) {
-            throw invalid(fieldName, "must be positive");
+            throw invalid(fieldName, MUST_BE_POSITIVE);
         }
         return value;
     }
@@ -129,7 +133,7 @@ public final class ValidationUtils {
      */
     public static long requirePositive(final long value, final String fieldName) {
         if (value <= 0) {
-            throw invalid(fieldName, "must be positive");
+            throw invalid(fieldName, MUST_BE_POSITIVE);
         }
         return value;
     }
@@ -163,7 +167,7 @@ public final class ValidationUtils {
      */
     public static int requireAtLeast(final int value, final int minimum, final String fieldName) {
         if (value < minimum) {
-            throw invalid(fieldName, "must be at least " + minimum);
+            throw invalid(fieldName, MUST_BE_AT_LEAST + minimum);
         }
         return value;
     }
@@ -179,7 +183,7 @@ public final class ValidationUtils {
      */
     public static long requireAtLeast(final long value, final long minimum, final String fieldName) {
         if (value < minimum) {
-            throw invalid(fieldName, "must be at least " + minimum);
+            throw invalid(fieldName, MUST_BE_AT_LEAST + minimum);
         }
         return value;
     }
@@ -194,14 +198,34 @@ public final class ValidationUtils {
      * @param minimum inclusive lower bound
      * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
-     * @throws IllegalArgumentException if {@code value} is non-finite or below {@code minimum}
+     * @throws IllegalArgumentException if {@code minimum} is NaN, or {@code value} is non-finite or below
+     *     {@code minimum}
      */
     public static double requireAtLeast(final double value, final double minimum, final String fieldName) {
-        if (!Double.isFinite(value)) {
+        requireNotNaN(minimum, MINIMUM, fieldName);
+
+        if (!Double.isFinite(value) || value < minimum) {
             throw invalid(fieldName, "must be finite and at least " + minimum);
         }
-        if (value < minimum) {
-            throw invalid(fieldName, "must be finite and at least " + minimum);
+        return value;
+    }
+
+    /**
+     * Requires {@code value} to be at least {@code minimum}.
+     *
+     * @param value duration to check
+     * @param minimum inclusive lower bound
+     * @param fieldName name of the checked value, used in the exception message
+     * @return {@code value}
+     * @throws NullPointerException if {@code value} or {@code minimum} is {@code null}
+     * @throws IllegalArgumentException if {@code value} is below {@code minimum}
+     */
+    public static Duration requireAtLeast(final Duration value, final Duration minimum, final String fieldName) {
+        requireNonNull(value, fieldName);
+        requireNonNull(minimum, MINIMUM);
+
+        if (value.compareTo(minimum) < 0) {
+            throw invalid(fieldName, MUST_BE_AT_LEAST + minimum);
         }
         return value;
     }
@@ -277,7 +301,7 @@ public final class ValidationUtils {
      */
     public static int requireAtMost(final int value, final int maximum, final String fieldName) {
         if (value > maximum) {
-            throw invalid(fieldName, "must be at most " + maximum);
+            throw invalid(fieldName, MUST_BE_AT_MOST + maximum);
         }
         return value;
     }
@@ -293,7 +317,7 @@ public final class ValidationUtils {
      */
     public static long requireAtMost(final long value, final long maximum, final String fieldName) {
         if (value > maximum) {
-            throw invalid(fieldName, "must be at most " + maximum);
+            throw invalid(fieldName, MUST_BE_AT_MOST + maximum);
         }
         return value;
     }
@@ -305,13 +329,13 @@ public final class ValidationUtils {
      * @param maximum inclusive upper bound
      * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
-     * @throws IllegalArgumentException if {@code value} is non-finite or above {@code maximum}
+     * @throws IllegalArgumentException if {@code maximum} is NaN, or {@code value} is non-finite or above
+     *     {@code maximum}
      */
     public static double requireAtMost(final double value, final double maximum, final String fieldName) {
-        if (!Double.isFinite(value)) {
-            throw invalid(fieldName, "must be finite and at most " + maximum);
-        }
-        if (value > maximum) {
+        requireNotNaN(maximum, MAXIMUM, fieldName);
+
+        if (!Double.isFinite(value) || value > maximum) {
             throw invalid(fieldName, "must be finite and at most " + maximum);
         }
         return value;
@@ -329,10 +353,10 @@ public final class ValidationUtils {
      */
     public static Duration requireAtMost(final Duration value, final Duration maximum, final String fieldName) {
         requireNonNull(value, fieldName);
-        Objects.requireNonNull(maximum, "maximum must not be null");
+        requireNonNull(maximum, MAXIMUM);
 
         if (value.compareTo(maximum) > 0) {
-            throw invalid(fieldName, "must be at most " + maximum);
+            throw invalid(fieldName, MUST_BE_AT_MOST + maximum);
         }
         return value;
     }
@@ -405,9 +429,14 @@ public final class ValidationUtils {
      * @param maximum inclusive upper bound
      * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
-     * @throws IllegalArgumentException if {@code value} is outside the range
+     * @throws IllegalArgumentException if {@code minimum} is above {@code maximum}, or {@code value} is outside the
+     *     range
      */
     public static int requireBetween(final int value, final int minimum, final int maximum, final String fieldName) {
+        if (minimum > maximum) {
+            throw invertedBounds(fieldName, minimum, maximum);
+        }
+
         if (value < minimum || value > maximum) {
             throw invalid(fieldName, "must be " + between(minimum, maximum));
         }
@@ -422,10 +451,15 @@ public final class ValidationUtils {
      * @param maximum inclusive upper bound
      * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
-     * @throws IllegalArgumentException if {@code value} is outside the range
+     * @throws IllegalArgumentException if {@code minimum} is above {@code maximum}, or {@code value} is outside the
+     *     range
      */
     public static long requireBetween(
             final long value, final long minimum, final long maximum, final String fieldName) {
+        if (minimum > maximum) {
+            throw invertedBounds(fieldName, minimum, maximum);
+        }
+
         if (value < minimum || value > maximum) {
             throw invalid(fieldName, "must be " + between(minimum, maximum));
         }
@@ -440,10 +474,17 @@ public final class ValidationUtils {
      * @param maximum inclusive upper bound
      * @param fieldName name of the checked value, used in the exception message
      * @return {@code value}
-     * @throws IllegalArgumentException if {@code value} is non-finite or outside the range
+     * @throws IllegalArgumentException if a bound is NaN, {@code minimum} is above {@code maximum}, or {@code value} is
+     *     non-finite or outside the range
      */
     public static double requireBetween(
             final double value, final double minimum, final double maximum, final String fieldName) {
+        requireNotNaN(minimum, MINIMUM, fieldName);
+        requireNotNaN(maximum, MAXIMUM, fieldName);
+        if (minimum > maximum) {
+            throw invertedBounds(fieldName, minimum, maximum);
+        }
+
         if (!Double.isFinite(value) || value < minimum || value > maximum) {
             throw invalid(fieldName, "must be finite and " + between(minimum, maximum));
         }
@@ -515,24 +556,6 @@ public final class ValidationUtils {
     }
 
     /**
-     * Requires {@code value} to be at least {@code minimum}.
-     *
-     * @param value duration to check
-     * @param minimum inclusive lower bound
-     * @param fieldName name of the checked value, used in the exception message
-     * @throws NullPointerException if {@code value} or {@code minimum} is {@code null}
-     * @throws IllegalArgumentException if {@code value} is below {@code minimum}
-     */
-    public static void requireGreaterOrEqual(final Duration value, final Duration minimum, final String fieldName) {
-        requireNonNull(value, fieldName);
-        Objects.requireNonNull(minimum, "minimum must not be null");
-
-        if (value.compareTo(minimum) < 0) {
-            throw invalid(fieldName, "must be at least " + minimum);
-        }
-    }
-
-    /**
      * Requires {@code values} to be non-null and non-empty.
      *
      * @param values collection to check
@@ -546,7 +569,7 @@ public final class ValidationUtils {
         requireNonNull(values, fieldName);
 
         if (values.isEmpty()) {
-            throw invalid(fieldName, "must not be empty");
+            throw invalid(fieldName, MUST_NOT_BE_EMPTY);
         }
         return values;
     }
@@ -566,7 +589,7 @@ public final class ValidationUtils {
         requireNonNull(map, fieldName);
 
         if (map.isEmpty()) {
-            throw invalid(fieldName, "must not be empty");
+            throw invalid(fieldName, MUST_NOT_BE_EMPTY);
         }
         return map;
     }
@@ -585,7 +608,7 @@ public final class ValidationUtils {
         requireNonNull(values, fieldName);
 
         if (values.length == 0) {
-            throw invalid(fieldName, "must not be empty");
+            throw invalid(fieldName, MUST_NOT_BE_EMPTY);
         }
         return values;
     }
@@ -725,11 +748,14 @@ public final class ValidationUtils {
      * @param <T> collection type
      * @return {@code values}
      * @throws NullPointerException if {@code values} is {@code null}
-     * @throws IllegalArgumentException if size is outside {@code min}..{@code max}
+     * @throws IllegalArgumentException if {@code min} is above {@code max}, or size is outside {@code min}..{@code max}
      */
     public static <T extends Collection<?>> T requireSizeBetween(
             final T values, final int min, final int max, final String fieldName) {
         requireNonNull(values, fieldName);
+        if (min > max) {
+            throw invertedBounds(fieldName, min, max);
+        }
 
         if (values.size() < min || values.size() > max) {
             throw invalid(fieldName, "must have " + between(min, max) + ELEMENTS);
@@ -748,11 +774,14 @@ public final class ValidationUtils {
      * @param <V> value type
      * @return {@code map}
      * @throws NullPointerException if {@code map} is {@code null}
-     * @throws IllegalArgumentException if size is outside {@code min}..{@code max}
+     * @throws IllegalArgumentException if {@code min} is above {@code max}, or size is outside {@code min}..{@code max}
      */
     public static <K, V> Map<K, V> requireSizeBetween(
             final Map<K, V> map, final int min, final int max, final String fieldName) {
         requireNonNull(map, fieldName);
+        if (min > max) {
+            throw invertedBounds(fieldName, min, max);
+        }
 
         if (map.size() < min || map.size() > max) {
             throw invalid(fieldName, "must have " + between(min, max) + ENTRIES);
@@ -879,10 +908,53 @@ public final class ValidationUtils {
      */
     public static String requireMatches(final String value, final Pattern pattern, final String fieldName) {
         requireNonNull(value, fieldName);
-        Objects.requireNonNull(pattern, "pattern must not be null");
+        requireNonNull(pattern, "pattern");
 
         if (!pattern.matcher(value).find()) {
             throw invalid(fieldName, "must match the required pattern");
+        }
+        return value;
+    }
+
+    /**
+     * Requires the whole of {@code value} to match {@code pattern}.
+     *
+     * <p>Matching uses {@link java.util.regex.Matcher#matches()}, so the pattern must cover the entire string.
+     *
+     * @param value string to check
+     * @param pattern regex applied with {@link java.util.regex.Matcher#matches()}
+     * @param fieldName name of the checked value, used in the exception message
+     * @return {@code value}
+     * @throws NullPointerException if {@code value} or {@code pattern} is {@code null}
+     * @throws IllegalArgumentException if {@code value} does not match {@code pattern} as a whole
+     */
+    public static String requireFullMatch(final String value, final Pattern pattern, final String fieldName) {
+        requireNonNull(value, fieldName);
+        requireNonNull(pattern, "pattern");
+
+        if (!pattern.matcher(value).matches()) {
+            throw invalid(fieldName, "must match the required pattern");
+        }
+        return value;
+    }
+
+    /**
+     * Requires the whole of {@code value} to match {@code pattern} when it is non-null.
+     *
+     * <p>{@code null} is allowed and returned unchanged. A present value is checked with
+     * {@link #requireFullMatch(String, Pattern, String)}.
+     *
+     * @param value string to check, or {@code null}
+     * @param pattern regex applied with {@link java.util.regex.Matcher#matches()}
+     * @param fieldName name of the checked value, used in the exception message
+     * @return {@code value}
+     * @throws NullPointerException if {@code value} is present and {@code pattern} is {@code null}
+     * @throws IllegalArgumentException if {@code value} does not match {@code pattern} as a whole
+     */
+    public static @Nullable String requireFullMatchIfPresent(
+            @Nullable final String value, final Pattern pattern, final String fieldName) {
+        if (value != null) {
+            requireFullMatch(value, pattern, fieldName);
         }
         return value;
     }
@@ -1045,7 +1117,7 @@ public final class ValidationUtils {
      * @param duration duration to inspect, or {@code null}
      * @return {@code true} if {@code duration} is missing or not positive
      */
-    public static boolean isNonPositive(@Nullable final Duration duration) {
+    static boolean isNonPositive(@Nullable final Duration duration) {
         return duration == null || duration.isNegative() || duration.isZero();
     }
 
@@ -1061,6 +1133,18 @@ public final class ValidationUtils {
 
     private static String between(final Object minimum, final Object maximum) {
         return "between " + minimum + " and " + maximum;
+    }
+
+    private static void requireNotNaN(final double bound, final String name, final String fieldName) {
+        if (Double.isNaN(bound)) {
+            throw invalid(fieldName, "has a NaN " + name);
+        }
+    }
+
+    private static IllegalArgumentException invertedBounds(
+            final String fieldName, final Object minimum, final Object maximum) {
+        return invalid(
+                fieldName, "has bounds in the wrong order: minimum " + minimum + " is greater than maximum " + maximum);
     }
 
     private static IllegalArgumentException invalid(final String fieldName, final String rule) {

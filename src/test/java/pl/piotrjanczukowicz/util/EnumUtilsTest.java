@@ -2,6 +2,8 @@ package pl.piotrjanczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class EnumUtilsTest {
 
@@ -33,116 +36,139 @@ class EnumUtilsTest {
 
     @ParameterizedTest
     @MethodSource("wireHits")
-    <E extends Enum<E>> void fromWire_whenWireMatches_shouldReturnConstant(
-            final String wire, final Class<E> enumClass, final Function<E, String> wireValue, final E expected) {
-        final Optional<E> resolved = EnumUtils.fromWire(wire, enumClass, wireValue);
+    void fromWire_whenWireMatches_shouldReturnConstant(final String wire, final SampleWireEnum expected) {
+        final EnumUtils.WireIndex<SampleWireEnum> index =
+                EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
+
+        final Optional<SampleWireEnum> resolved = index.fromWire(wire);
 
         assertThat(resolved).contains(expected);
     }
 
-    @Test
-    void fromWire_whenLookupIsCached_shouldReturnConstant() {
-        final String wire = "secret";
-        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
-        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
-        EnumUtils.fromWire(wire, enumClass, wireValue);
-
-        final Optional<SampleWireEnum> resolved = EnumUtils.fromWire(wire, enumClass, wireValue);
-
-        assertThat(resolved).contains(SampleWireEnum.SECRET);
-    }
-
     @ParameterizedTest
-    @MethodSource("wireMisses")
-    <E extends Enum<E>> void fromWire_whenWireDoesNotMatch_shouldReturnEmpty(
-            final String wire, final Class<E> enumClass, final Function<E, String> wireValue) {
-        final Optional<E> resolved = EnumUtils.fromWire(wire, enumClass, wireValue);
+    @ValueSource(strings = {"unknown", "user", ""})
+    void fromWire_whenWireDoesNotMatch_shouldReturnEmpty(final String wire) {
+        final EnumUtils.WireIndex<SampleWireEnum> index =
+                EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
+
+        final Optional<SampleWireEnum> resolved = index.fromWire(wire);
 
         assertThat(resolved).isEmpty();
     }
 
     @Test
-    void fromWireWithDefault_whenWireMatches_shouldReturnConstant() {
-        final String value = "secret";
-        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
-        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
-        final SampleWireEnum defaultValue = SampleWireEnum.USER;
+    void index_whenSameEnumIndexedWithDifferentMappings_shouldResolveEachByItsOwnMapping() {
+        final EnumUtils.WireIndex<SampleWireEnum> byWire =
+                EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
+        final EnumUtils.WireIndex<SampleWireEnum> byName = EnumUtils.index(SampleWireEnum.class, SampleWireEnum::name);
 
-        final SampleWireEnum resolved = EnumUtils.fromWire(value, enumClass, wireValue, defaultValue);
+        assertSoftly(softly -> {
+            softly.assertThat(byWire.fromWire("secret")).contains(SampleWireEnum.SECRET);
+            softly.assertThat(byWire.fromWire("SECRET")).isEmpty();
+            softly.assertThat(byName.fromWire("SECRET")).contains(SampleWireEnum.SECRET);
+            softly.assertThat(byName.fromWire("secret")).isEmpty();
+        });
+    }
+
+    @Test
+    void index_whenTwoConstantsShareWireValue_shouldThrow() {
+        final Function<SampleWireEnum, String> constantWire = constant -> "same";
+
+        final Throwable thrown = catchThrowable(() -> EnumUtils.index(SampleWireEnum.class, constantWire));
+
+        assertThat(thrown).isInstanceOf(IllegalStateException.class).hasMessageContaining("same");
+    }
+
+    @Test
+    void index_whenCreated_shouldApplyMappingOncePerConstant() {
+        final AtomicInteger mappings = new AtomicInteger();
+        final Function<SampleWireEnum, String> countingWire = constant -> {
+            mappings.incrementAndGet();
+            return constant.wireValue();
+        };
+
+        final EnumUtils.WireIndex<SampleWireEnum> index = EnumUtils.index(SampleWireEnum.class, countingWire);
+        index.fromWire("secret");
+        index.fromWire("missing");
+
+        assertThat(mappings).hasValue(SampleWireEnum.values().length);
+    }
+
+    @Test
+    void index_whenWireValueReturnsNull_shouldThrowNamingConstant() {
+        final Function<SampleWireEnum, String> nullWire = constant -> null;
+
+        final Throwable thrown = catchThrowable(() -> EnumUtils.index(SampleWireEnum.class, nullWire));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("wire value of SECRET must not be null");
+    }
+
+    @Test
+    void indexFromWireWithDefault_whenWireMatches_shouldReturnConstant() {
+        final EnumUtils.WireIndex<SampleWireEnum> index =
+                EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
+
+        final SampleWireEnum resolved = index.fromWire("secret", SampleWireEnum.USER);
 
         assertThat(resolved).isEqualTo(SampleWireEnum.SECRET);
     }
 
     @Test
-    void fromWireWithDefault_whenWireDoesNotMatch_shouldReturnDefault() {
-        final String value = "unknown";
-        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
-        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
-        final SampleWireEnum defaultValue = SampleWireEnum.USER;
+    void indexFromWireWithDefault_whenWireDoesNotMatch_shouldReturnDefault() {
+        final EnumUtils.WireIndex<SampleWireEnum> index =
+                EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
 
-        final SampleWireEnum resolved = EnumUtils.fromWire(value, enumClass, wireValue, defaultValue);
+        final SampleWireEnum resolved = index.fromWire("unknown", SampleWireEnum.USER);
 
         assertThat(resolved).isEqualTo(SampleWireEnum.USER);
     }
 
     @Test
-    void fromWireWithDefault_whenDefaultValueNull_shouldThrow() {
-        final String value = "secret";
-        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
-        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
+    void indexFromWireWithDefault_whenDefaultValueNull_shouldThrow() {
+        final EnumUtils.WireIndex<SampleWireEnum> index =
+                EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
         final SampleWireEnum defaultValue = null;
 
-        assertThatThrownBy(() -> EnumUtils.fromWire(value, enumClass, wireValue, defaultValue))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("defaultValue must not be null");
+        final Throwable thrown = catchThrowable(() -> index.fromWire("secret", defaultValue));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("defaultValue must not be null");
     }
 
     @Test
     void fromWire_whenValueNull_shouldThrow() {
+        final EnumUtils.WireIndex<SampleWireEnum> index =
+                EnumUtils.index(SampleWireEnum.class, SampleWireEnum::wireValue);
         final String value = null;
-        final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
-        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
 
-        assertThatThrownBy(() -> EnumUtils.fromWire(value, enumClass, wireValue))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("value must not be null");
+        final Throwable thrown = catchThrowable(() -> index.fromWire(value));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("value must not be null");
     }
 
     @Test
-    void fromWire_whenEnumClassNull_shouldThrow() {
-        final String value = "secret";
+    void index_whenEnumClassNull_shouldThrow() {
         final Class<SampleWireEnum> enumClass = null;
-        final Function<SampleWireEnum, String> wireValue = SampleWireEnum::wireValue;
 
-        assertThatThrownBy(() -> EnumUtils.fromWire(value, enumClass, wireValue))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("enumClass must not be null");
+        final Throwable thrown = catchThrowable(() -> EnumUtils.index(enumClass, SampleWireEnum::wireValue));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("enumClass must not be null");
     }
 
     @Test
-    void fromWire_whenWireValueNull_shouldThrow() {
-        final String value = "secret";
+    void index_whenWireValueNull_shouldThrow() {
         final Class<SampleWireEnum> enumClass = SampleWireEnum.class;
         final Function<SampleWireEnum, String> wireValue = null;
 
-        assertThatThrownBy(() -> EnumUtils.fromWire(value, enumClass, wireValue))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("wireValue must not be null");
+        final Throwable thrown = catchThrowable(() -> EnumUtils.index(enumClass, wireValue));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("wireValue must not be null");
     }
 
     @Test
-    void fromWire_whenCalledConcurrently_shouldResolveCorrectlyAndBuildEachIndexOnce() throws Exception {
+    void fromWire_whenCalledConcurrently_shouldResolveCorrectly() throws Exception {
         final int threads = 16;
-        final AtomicInteger firstMappings = new AtomicInteger();
-        final AtomicInteger secondMappings = new AtomicInteger();
-        final Function<ConcurrentEnumA, String> firstWire = constant -> {
-            firstMappings.incrementAndGet();
-            return constant.name().toLowerCase(Locale.ROOT);
-        };
-        final Function<ConcurrentEnumB, String> secondWire = constant -> {
-            secondMappings.incrementAndGet();
-            return "b-" + constant.ordinal();
-        };
+        final EnumUtils.WireIndex<ConcurrentEnum> index = EnumUtils.index(
+                ConcurrentEnum.class, constant -> constant.name().toLowerCase(Locale.ROOT));
         final CountDownLatch start = new CountDownLatch(1);
         final ExecutorService executor = Executors.newFixedThreadPool(threads);
         try {
@@ -152,14 +178,10 @@ class EnumUtilsTest {
                     start.await();
                     boolean isCorrect = true;
                     for (int round = 0; round < 200; round++) {
-                        isCorrect &= EnumUtils.fromWire("one", ConcurrentEnumA.class, firstWire)
-                                .filter(ConcurrentEnumA.ONE::equals)
+                        isCorrect &= index.fromWire("one")
+                                .filter(ConcurrentEnum.ONE::equals)
                                 .isPresent();
-                        isCorrect &= EnumUtils.fromWire("b-2", ConcurrentEnumB.class, secondWire)
-                                .filter(ConcurrentEnumB.THIRD::equals)
-                                .isPresent();
-                        isCorrect &= EnumUtils.fromWire("missing", ConcurrentEnumA.class, firstWire)
-                                .isEmpty();
+                        isCorrect &= index.fromWire("missing").isEmpty();
                     }
                     return isCorrect;
                 }));
@@ -173,46 +195,18 @@ class EnumUtilsTest {
         } finally {
             executor.shutdownNow();
         }
-        assertThat(firstMappings).hasValue(ConcurrentEnumA.values().length);
-        assertThat(secondMappings).hasValue(ConcurrentEnumB.values().length);
     }
 
     private static Stream<Arguments> wireHits() {
         return Stream.of(
-                Arguments.of(
-                        "secret",
-                        SampleWireEnum.class,
-                        (Function<SampleWireEnum, String>) SampleWireEnum::wireValue,
-                        SampleWireEnum.SECRET),
-                Arguments.of(
-                        "User",
-                        SampleWireEnum.class,
-                        (Function<SampleWireEnum, String>) SampleWireEnum::wireValue,
-                        SampleWireEnum.USER),
-                Arguments.of(
-                        "+1",
-                        SampleWireEnum.class,
-                        (Function<SampleWireEnum, String>) SampleWireEnum::wireValue,
-                        SampleWireEnum.PLUS_ONE));
+                Arguments.of("secret", SampleWireEnum.SECRET),
+                Arguments.of("User", SampleWireEnum.USER),
+                Arguments.of("+1", SampleWireEnum.PLUS_ONE));
     }
 
-    private static Stream<Arguments> wireMisses() {
-        return Stream.of(
-                Arguments.of(
-                        "unknown", SampleWireEnum.class, (Function<SampleWireEnum, String>) SampleWireEnum::wireValue),
-                Arguments.of(
-                        "user", SampleWireEnum.class, (Function<SampleWireEnum, String>) SampleWireEnum::wireValue));
-    }
-
-    private enum ConcurrentEnumA {
+    private enum ConcurrentEnum {
         ONE,
         TWO
-    }
-
-    private enum ConcurrentEnumB {
-        FIRST,
-        SECOND,
-        THIRD
     }
 
     private enum SampleWireEnum {
