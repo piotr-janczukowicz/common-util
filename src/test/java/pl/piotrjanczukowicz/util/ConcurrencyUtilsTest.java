@@ -43,7 +43,9 @@ class ConcurrencyUtilsTest {
     void sleepInterruptibly_shouldThrowInterruptedIoWithCause_whenThreadAlreadyInterrupted() {
         Thread.currentThread().interrupt();
         try {
-            assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(Duration.ofSeconds(1), "waiting stopped"))
+            final Duration delay = Duration.ofSeconds(1);
+
+            assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(delay, "waiting stopped"))
                     .isInstanceOf(InterruptedIOException.class)
                     .hasMessage("waiting stopped")
                     .hasCauseInstanceOf(InterruptedException.class);
@@ -64,7 +66,9 @@ class ConcurrencyUtilsTest {
 
     @Test
     void sleepInterruptibly_shouldThrowIllegalArgumentException_whenDelayNegative() {
-        assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(Duration.ofSeconds(-1), "waiting stopped"))
+        final Duration delay = Duration.ofSeconds(-1);
+
+        assertThatThrownBy(() -> ConcurrencyUtils.sleepInterruptibly(delay, "waiting stopped"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("delay must not be negative");
     }

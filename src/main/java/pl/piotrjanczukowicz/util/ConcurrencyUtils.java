@@ -23,7 +23,7 @@ public final class ConcurrencyUtils {
     /**
      * Sleeps for {@code delay}. An interrupt is reported as an {@link InterruptedIOException}.
      *
-     * <p>A zero delay returns at once without sleeping, so an interrupt flag already set stays set. Otherwise the
+     * <p>A zero delay returns at once without sleeping, so an interrupt flag already set stays set. Otherwise, the
      * thread sleeps; if it is interrupted, or was interrupted before the call, the interrupt flag is restored and an
      * {@link InterruptedIOException} with {@code message} is thrown, caused by the {@link InterruptedException}.
      *

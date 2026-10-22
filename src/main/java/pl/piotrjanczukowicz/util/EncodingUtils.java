@@ -1,7 +1,9 @@
 package pl.piotrjanczukowicz.util;
 
+import static pl.piotrjanczukowicz.util.ValidationUtils.requireNonNull;
+import static pl.piotrjanczukowicz.util.ValidationUtils.requireNotBlank;
+
 import java.util.Base64;
-import java.util.Objects;
 
 /**
  * Encoding and decoding helpers.
@@ -25,11 +27,12 @@ public final class EncodingUtils {
      * @param message exception text
      * @return the decoded bytes
      * @throws NullPointerException if {@code value} is {@code null}
-     * @throws IllegalArgumentException if {@code value} is not valid Base64
+     * @throws IllegalArgumentException if {@code message} is blank, or {@code value} is not valid Base64
      */
     @SuppressWarnings("PMD.AvoidThrowingNewInstanceOfSameException")
     public static byte[] decodeBase64(final String value, final String message) {
-        Objects.requireNonNull(value, message);
+        requireNonNull(value, "value");
+        requireNotBlank(message, "message");
 
         try {
             return Base64.getDecoder().decode(value);

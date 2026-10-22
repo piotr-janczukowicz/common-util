@@ -94,7 +94,7 @@ class StringUtilsTest {
                 new StringBuilder(" a "),
                 new StringBuilder("\u2003a\u2003"),
                 new StringBuilder("\u00A0"),
-                new StringBuilder("\u1F600"));
+                new StringBuilder("ὠ0"));
     }
 
     static Stream<Arguments> stripToNullCases() {

@@ -2,13 +2,17 @@ package pl.piotrjanczukowicz.util;
 
 import static pl.piotrjanczukowicz.util.ValidationUtils.requireNonNull;
 
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Thread-safe memoized supplier. A raced double construction keeps the first value.
+ * Thread-safe memoized supplier.
+ *
+ * <p>The supplier may be invoked concurrently by several threads before the first value is published; the first
+ * published value wins and the results of the other invocations are discarded, so the supplier must tolerate being
+ * called more than once. A supplier exception is not cached: it propagates to the caller and the next {@link #get()}
+ * invokes the supplier again.
  *
  * @param <T> value type
  */
@@ -34,11 +38,13 @@ public final class LazyValue<T> {
      * @throws NullPointerException if the supplier returns {@code null}
      */
     public T get() {
-        T result = value.get();
-        if (result == null) {
-            final T created = requireNonNull(supplier.get(), "value");
-            result = value.compareAndSet(null, created) ? created : Objects.requireNonNull(value.get(), "value");
-        }
-        return result;
+        final T cached = value.get();
+        return cached != null ? cached : publish();
+    }
+
+    @SuppressWarnings("java:S2637") // Sonar does not see that ValidationUtils.requireNonNull rejects null.
+    private T publish() {
+        final T created = requireNonNull(supplier.get(), "value");
+        return value.compareAndSet(null, created) ? created : requireNonNull(value.get(), "value");
     }
 }
