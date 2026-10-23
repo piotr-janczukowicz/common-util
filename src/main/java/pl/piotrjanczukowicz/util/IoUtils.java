@@ -176,9 +176,9 @@ public final class IoUtils {
         return result;
     }
 
-    // Moves the full chunk to the list and starts the next one. Chunks double with the bytes read so far, up to
-    // NEXT_CHUNK_BYTES, so a body just past one chunk does not pay for a large, mostly empty chunk. A chunk is never
-    // longer than what may still be read.
+    // Moves the full chunk to the list and starts the next one. Each new chunk is as large as everything read so far,
+    // between FIRST_CHUNK_BYTES and NEXT_CHUNK_BYTES, so a body just past one chunk does not pay for a large, mostly
+    // empty chunk. A chunk is never longer than what may still be read.
     private static byte[] nextChunk(
             final List<byte[]> full, final byte[] filledChunk, final int total, final long remaining) {
         if (filledChunk.length > 0) {
