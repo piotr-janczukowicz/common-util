@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.lang.reflect.Constructor;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -986,6 +987,26 @@ class ValidationUtilsTest {
         final Throwable thrown = catchThrowable(() -> ValidationUtils.requireUniqueItems(values, fieldName));
 
         assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("items must not contain duplicates");
+    }
+
+    @Test
+    void requireUniqueItems_shouldThrow_whenNullElementsDuplicate() {
+        final List<String> values = Arrays.asList(null, null);
+        final String fieldName = "items";
+
+        final Throwable thrown = catchThrowable(() -> ValidationUtils.requireUniqueItems(values, fieldName));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("items must not contain duplicates");
+    }
+
+    @Test
+    void requireUniqueItems_shouldReturnValue_whenOnlyOneNullElement() {
+        final List<String> values = Arrays.asList("a", null);
+        final String fieldName = "items";
+
+        final List<String> result = ValidationUtils.requireUniqueItems(values, fieldName);
+
+        assertThat(result).isSameAs(values);
     }
 
     @Test

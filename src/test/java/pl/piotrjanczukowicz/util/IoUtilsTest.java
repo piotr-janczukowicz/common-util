@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
@@ -365,6 +366,71 @@ class IoUtilsTest {
     }
 
     /** Hands out at most one byte per read call, so every reading loop sees partial reads. */
+    @Test
+    void copyBounded_shouldCopyAllBytes_whenStreamFitsTheLimit() throws IOException {
+        final byte[] data = new byte[20_000];
+        Arrays.fill(data, (byte) 7);
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        final long copied = IoUtils.copyBounded(new ByteArrayInputStream(data), out, data.length);
+
+        assertSoftly(softly -> {
+            softly.assertThat(copied).isEqualTo(data.length);
+            softly.assertThat(out.toByteArray()).isEqualTo(data);
+        });
+    }
+
+    @Test
+    void copyBounded_shouldCopyNothing_whenStreamEmptyAndLimitZero() throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        final long copied = IoUtils.copyBounded(new ByteArrayInputStream(new byte[0]), out, 0);
+
+        assertThat(copied).isZero();
+    }
+
+    @Test
+    void copyBounded_shouldThrowBoundedReadLimitException_whenStreamLongerThanLimit() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final InputStream in = new ByteArrayInputStream(new byte[100]);
+
+        final Throwable thrown = catchThrowable(() -> IoUtils.copyBounded(in, out, 99));
+
+        assertSoftly(softly -> {
+            softly.assertThat(thrown).isInstanceOf(BoundedReadLimitException.class);
+            softly.assertThat(((BoundedReadLimitException) thrown).limit()).isEqualTo(99);
+            softly.assertThat(out.size()).isZero();
+        });
+    }
+
+    @Test
+    void copyBounded_shouldThrowNullPointerException_whenInputNull() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        final Throwable thrown = catchThrowable(() -> IoUtils.copyBounded(null, out, 1));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("source must not be null");
+    }
+
+    @Test
+    void copyBounded_shouldThrowNullPointerException_whenOutputNull() {
+        final InputStream in = new ByteArrayInputStream(new byte[1]);
+
+        final Throwable thrown = catchThrowable(() -> IoUtils.copyBounded(in, null, 1));
+
+        assertThat(thrown).isInstanceOf(NullPointerException.class).hasMessage("target must not be null");
+    }
+
+    @Test
+    void copyBounded_shouldThrowIllegalArgumentException_whenLimitNegative() {
+        final InputStream in = new ByteArrayInputStream(new byte[1]);
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        final Throwable thrown = catchThrowable(() -> IoUtils.copyBounded(in, out, -1));
+
+        assertThat(thrown).isInstanceOf(IllegalArgumentException.class).hasMessage("maxBytes must be at least 0");
+    }
+
     private static final class TrickleStream extends InputStream {
 
         private final byte[] body;

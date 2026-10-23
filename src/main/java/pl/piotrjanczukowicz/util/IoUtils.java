@@ -5,6 +5,7 @@ import static pl.piotrjanczukowicz.util.ValidationUtils.requireNonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +19,9 @@ import java.util.List;
  * effective limit never exceeds {@link #MAX_BUFFER_BYTES} (the largest array the JVM reliably allocates) even when a
  * larger limit is passed; a longer stream then fails with {@link BoundedReadLimitException} instead of an
  * {@link OutOfMemoryError}.
+ *
+ * <p>{@link #copyBounded(InputStream, OutputStream, long)} copies a stream to another one under the same kind of limit,
+ * without buffering it.
  *
  * <p>{@link #closeSuppressing(AutoCloseable, Throwable)} closes a resource while keeping the failure that caused the
  * cleanup.
@@ -84,6 +88,43 @@ public final class IoUtils {
 
         final long limit = Math.min(maxBytes, MAX_BUFFER_BYTES);
         return expectedLength > 0 ? readSized(stream, limit, expectedLength) : readChunked(stream, limit);
+    }
+
+    /**
+     * Copies {@code source} to {@code target} until the end of {@code source}, without holding more than one buffer in
+     * memory and without letting the copy pass a byte limit.
+     *
+     * <p>The check runs before each chunk is written, so at most {@code maxBytes} bytes reach {@code target}. When the
+     * stream is longer, {@link BoundedReadLimitException} is thrown and {@code target} holds the bytes written so far.
+     * Neither stream is closed or flushed.
+     *
+     * @param source stream to drain
+     * @param target stream to write to
+     * @param maxBytes most bytes accepted, zero or positive
+     * @return number of bytes copied
+     * @throws NullPointerException if {@code source} or {@code target} is {@code null}
+     * @throws IllegalArgumentException if {@code maxBytes} is negative
+     * @throws BoundedReadLimitException if {@code source} holds more than {@code maxBytes} bytes
+     * @throws IOException if reading or writing fails
+     */
+    public static long copyBounded(final InputStream source, final OutputStream target, final long maxBytes)
+            throws IOException {
+        requireNonNull(source, "source");
+        requireNonNull(target, "target");
+        requireAtLeast(maxBytes, 0L, "maxBytes");
+
+        final byte[] buffer = new byte[BUFFER_SIZE];
+        long total = 0;
+        int read = source.read(buffer);
+        while (read >= 0) {
+            total += read;
+            if (total > maxBytes) {
+                throw new BoundedReadLimitException(maxBytes);
+            }
+            target.write(buffer, 0, read);
+            read = source.read(buffer);
+        }
+        return total;
     }
 
     /**
@@ -176,9 +217,9 @@ public final class IoUtils {
         return result;
     }
 
-    // Moves the full chunk to the list and starts the next one. Chunks double with the bytes read so far, up to
-    // NEXT_CHUNK_BYTES, so a body just past one chunk does not pay for a large, mostly empty chunk. A chunk is never
-    // longer than what may still be read.
+    // Moves the full chunk to the list and starts the next one. Each new chunk is as large as everything read so far,
+    // between FIRST_CHUNK_BYTES and NEXT_CHUNK_BYTES, so a body just past one chunk does not pay for a large, mostly
+    // empty chunk. A chunk is never longer than what may still be read.
     private static byte[] nextChunk(
             final List<byte[]> full, final byte[] filledChunk, final int total, final long remaining) {
         if (filledChunk.length > 0) {
