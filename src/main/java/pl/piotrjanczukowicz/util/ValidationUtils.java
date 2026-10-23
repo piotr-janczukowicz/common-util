@@ -1117,7 +1117,7 @@ public final class ValidationUtils {
      * @param duration duration to inspect, or {@code null}
      * @return {@code true} if {@code duration} is missing or not positive
      */
-    static boolean isNonPositive(@Nullable final Duration duration) {
+    public static boolean isNonPositive(@Nullable final Duration duration) {
         return duration == null || duration.isNegative() || duration.isZero();
     }
 
@@ -1127,7 +1127,7 @@ public final class ValidationUtils {
      * @param duration duration to inspect, or {@code null}
      * @return {@code true} if {@code duration} is positive
      */
-    static boolean isPositive(@Nullable final Duration duration) {
+    public static boolean isPositive(@Nullable final Duration duration) {
         return duration != null && !duration.isNegative() && !duration.isZero();
     }
 
