@@ -4,11 +4,11 @@ Java utilities and annotations for callers: fail-fast argument checks, ISO-8601 
 
 ## Dependency
 
-Java library. Add Maven coordinates `pl.piotrjanczukowicz:common-util:1`.
+Java library. Add Maven coordinates `io.github.piotr-janczukowicz:common-util:1`.
 
 ```xml
 <dependency>
-  <groupId>pl.piotrjanczukowicz</groupId>
+  <groupId>io.github.piotr-janczukowicz</groupId>
   <artifactId>common-util</artifactId>
   <version>1</version>
 </dependency>
@@ -19,7 +19,7 @@ Java library. Add Maven coordinates `pl.piotrjanczukowicz:common-util:1`.
 Call `ValidationUtils.requireNotBlank` to reject null or blank strings and keep the same value on success. Null fails with `NullPointerException`; blank fails with `IllegalArgumentException`.
 
 ```java
-import pl.piotrjanczukowicz.util.ValidationUtils;
+import io.github.piotr_janczukowicz.util.ValidationUtils;
 
 String name = ValidationUtils.requireNotBlank(rawName, "name");
 ```

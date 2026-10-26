@@ -4,6 +4,6 @@ module common.util {
     requires static io.soabase.recordbuilder.core;
     requires static java.compiler;
 
-    exports pl.piotrjanczukowicz.annotation;
-    exports pl.piotrjanczukowicz.util;
+    exports io.github.piotr_janczukowicz.annotation;
+    exports io.github.piotr_janczukowicz.util;
 }
