@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.github.piotr-janczukowicz</groupId>
     <artifactId>common-parent</artifactId>
-    <version>7</version>
+    <version>8</version>
     <relativePath/>
   </parent>
 
@@ -24,41 +24,4 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
-
-  <profiles>
-    <profile>
-      <!-- Opt-in: runs PMD with every rule enabled on test sources, lists the issues and fails the build. Activate with -Ppmd-test. -->
-      <id>pmd-test</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-pmd-plugin</artifactId>
-            <configuration>
-              <includeTests>true</includeTests>
-              <rulesets combine.self="override">
-                <ruleset>${project.basedir}/pmd/pmd-test-ruleset.xml</ruleset>
-              </rulesets>
-              <compileSourceRoots combine.self="override">
-                <compileSourceRoot>${project.basedir}/src/test/java</compileSourceRoot>
-              </compileSourceRoots>
-            </configuration>
-            <executions>
-              <execution>
-                <id>pmd-main</id>
-                <phase>none</phase>
-              </execution>
-              <execution>
-                <id>pmd-test</id>
-                <phase>process-test-classes</phase>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>
