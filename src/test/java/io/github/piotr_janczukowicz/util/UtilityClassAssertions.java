@@ -14,10 +14,8 @@ final class UtilityClassAssertions {
     /**
      * Asserts that the private no-arg constructor of {@code utilityClass} rejects instantiation.
      *
-     * <p>Reflection is the only way to reach a private constructor, so the accessibility override is intentional. The
-     * rule targets Security Manager sandboxes, which no longer exist.
+     * <p>Reflection is the only way to reach a private constructor, so the accessibility override is intentional.
      */
-    @SuppressWarnings("PMD.AvoidAccessibilityAlteration")
     static void assertNotInstantiable(final Class<?> utilityClass) throws ReflectiveOperationException {
         final Constructor<?> constructor = utilityClass.getDeclaredConstructor();
         constructor.setAccessible(true);

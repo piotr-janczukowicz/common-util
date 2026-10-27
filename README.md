@@ -1,3 +1,4 @@
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/2aef4762ea294ad89c04966d6bde8f6c)](https://app.codacy.com/gh/piotr-janczukowicz/common-util/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 # common-util
 
 Java utilities and annotations for callers: fail-fast argument checks, ISO-8601 instant formatting, enum lookup from wire strings, and classpath resource reads. Annotate records with `@RecordBuilder` to generate type-safe builders at compile time.
