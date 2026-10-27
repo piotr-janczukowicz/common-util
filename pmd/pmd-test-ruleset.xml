@@ -42,6 +42,7 @@
     <rule ref="category/java/errorprone.xml">
         <!-- Tests hold streams unclosed on purpose to assert close semantics; executors are shut down in finally. -->
         <exclude name="CloseResource"/>
+        <exclude name="AvoidAccessibilityAlteration"/>
         <exclude name="AvoidDuplicateLiterals"/>
         <exclude name="AvoidFieldNameMatchingMethodName"/>
         <exclude name="UseProperClassLoader"/>
