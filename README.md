@@ -4,13 +4,13 @@ Java utilities and annotations for callers: fail-fast argument checks, ISO-8601 
 
 ## Dependency
 
-Java library. Add Maven coordinates `io.github.piotr-janczukowicz:common-util:1`.
+Java library. Add Maven coordinates `io.github.piotr-janczukowicz:common-util:7`.
 
 ```xml
 <dependency>
   <groupId>io.github.piotr-janczukowicz</groupId>
   <artifactId>common-util</artifactId>
-  <version>1</version>
+  <version>7</version>
 </dependency>
 ```
 
