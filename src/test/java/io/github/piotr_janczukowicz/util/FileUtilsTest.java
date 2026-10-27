@@ -7,7 +7,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
@@ -15,13 +14,8 @@ import org.junit.jupiter.api.Test;
 class FileUtilsTest {
 
     @Test
-    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
-        final Constructor<FileUtils> constructor = FileUtils.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-
-        final Throwable thrown = catchThrowable(constructor::newInstance);
-
-        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws ReflectiveOperationException {
+        UtilityClassAssertions.assertNotInstantiable(FileUtils.class);
     }
 
     @Test

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
-import java.lang.reflect.Constructor;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,13 +21,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 class ValidationUtilsTest {
 
     @Test
-    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
-        final Constructor<ValidationUtils> constructor = ValidationUtils.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-
-        final Throwable thrown = catchThrowable(constructor::newInstance);
-
-        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws ReflectiveOperationException {
+        UtilityClassAssertions.assertNotInstantiable(ValidationUtils.class);
     }
 
     @ParameterizedTest

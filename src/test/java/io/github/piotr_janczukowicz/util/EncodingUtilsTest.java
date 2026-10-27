@@ -3,7 +3,6 @@ package io.github.piotr_janczukowicz.util;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
-import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,13 +11,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 class EncodingUtilsTest {
 
     @Test
-    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
-        final Constructor<EncodingUtils> constructor = EncodingUtils.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-
-        final Throwable thrown = catchThrowable(constructor::newInstance);
-
-        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws ReflectiveOperationException {
+        UtilityClassAssertions.assertNotInstantiable(EncodingUtils.class);
     }
 
     @Test
