@@ -34,47 +34,26 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-pmd-plugin</artifactId>
+            <configuration>
+              <includeTests>true</includeTests>
+              <rulesets combine.self="override">
+                <ruleset>${project.basedir}/pmd/pmd-test-ruleset.xml</ruleset>
+              </rulesets>
+              <compileSourceRoots combine.self="override">
+                <compileSourceRoot>${project.basedir}/src/test/java</compileSourceRoot>
+              </compileSourceRoots>
+            </configuration>
             <executions>
+              <execution>
+                <id>pmd-main</id>
+                <phase>none</phase>
+              </execution>
               <execution>
                 <id>pmd-test</id>
                 <phase>process-test-classes</phase>
                 <goals>
-                  <goal>pmd</goal>
+                  <goal>check</goal>
                 </goals>
-                <configuration>
-                  <includeTests>true</includeTests>
-                  <rulesets combine.self="override">
-                    <ruleset>${project.basedir}/pmd/pmd-test-ruleset.xml</ruleset>
-                  </rulesets>
-                  <compileSourceRoots combine.self="override">
-                    <compileSourceRoot>${project.basedir}/src/test/java</compileSourceRoot>
-                  </compileSourceRoots>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <version>3.1.0</version>
-            <executions>
-              <execution>
-                <id>pmd-test-issues</id>
-                <phase>process-test-classes</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <xslt in="${project.build.directory}/pmd.xml" out="${project.build.directory}/pmd-test-issues.txt" style="${project.basedir}/pmd/pmd-issues.xsl"/>
-                    <loadfile property="pmd.test.issues" srcFile="${project.build.directory}/pmd-test-issues.txt"/>
-                    <echo message="PMD test issues:${line.separator}${pmd.test.issues}"/>
-                    <condition property="pmd.test.failed">
-                      <resourcecontains resource="${project.build.directory}/pmd.xml" substring="&lt;violation "/>
-                    </condition>
-                    <fail if="pmd.test.failed" message="PMD found issues in test sources, listed above"/>
-                  </target>
-                </configuration>
               </execution>
             </executions>
           </plugin>
