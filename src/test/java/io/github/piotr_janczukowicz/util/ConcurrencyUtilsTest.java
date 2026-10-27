@@ -5,20 +5,14 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.io.InterruptedIOException;
-import java.lang.reflect.Constructor;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 class ConcurrencyUtilsTest {
 
     @Test
-    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
-        final Constructor<ConcurrencyUtils> constructor = ConcurrencyUtils.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-
-        final Throwable thrown = catchThrowable(constructor::newInstance);
-
-        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws ReflectiveOperationException {
+        UtilityClassAssertions.assertNotInstantiable(ConcurrencyUtils.class);
     }
 
     @Test

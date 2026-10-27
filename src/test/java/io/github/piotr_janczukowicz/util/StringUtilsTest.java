@@ -1,9 +1,7 @@
 package io.github.piotr_janczukowicz.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
 
-import java.lang.reflect.Constructor;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,13 +13,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 class StringUtilsTest {
 
     @Test
-    void constructor_shouldThrow_whenInstantiatedViaReflection() throws Exception {
-        final Constructor<StringUtils> constructor = StringUtils.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-
-        final Throwable thrown = catchThrowable(constructor::newInstance);
-
-        assertThat(thrown).hasCauseInstanceOf(UnsupportedOperationException.class);
+    void constructor_shouldThrow_whenInstantiatedViaReflection() throws ReflectiveOperationException {
+        UtilityClassAssertions.assertNotInstantiable(StringUtils.class);
     }
 
     @ParameterizedTest
