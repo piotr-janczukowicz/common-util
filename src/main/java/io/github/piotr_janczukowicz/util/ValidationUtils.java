@@ -1,6 +1,5 @@
 package io.github.piotr_janczukowicz.util;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
@@ -45,9 +44,6 @@ public final class ValidationUtils {
      * @return {@code value}
      * @throws NullPointerException if {@code value} is {@code null}
      */
-    @SuppressFBWarnings(
-            value = "NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE",
-            justification = "null is rejected with NullPointerException")
     public static <T> T requireNonNull(@Nullable final T value, final String fieldName) {
         return Objects.requireNonNull(value, () -> fieldName + " must not be null");
     }

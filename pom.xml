@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.github.piotr-janczukowicz</groupId>
     <artifactId>common-parent</artifactId>
-    <version>5</version>
+    <version>7</version>
     <relativePath/>
   </parent>
 
@@ -24,22 +24,4 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>io.soabase.record-builder</groupId>
-              <artifactId>record-builder-processor</artifactId>
-              <version>${record.builder.version}</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>
