@@ -445,7 +445,9 @@ class IoUtilsTest {
             if (position == body.length) {
                 return -1;
             }
-            return body[position++] & 0xFF;
+            final int next = body[position] & 0xFF;
+            position++;
+            return next;
         }
 
         @Override

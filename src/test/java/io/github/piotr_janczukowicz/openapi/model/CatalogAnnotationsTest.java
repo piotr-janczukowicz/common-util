@@ -6,6 +6,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.RecordComponent;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +49,7 @@ class CatalogAnnotationsTest {
     @Test
     void annotations_shouldBeReadableByReflection_whenPlacedOnRecord() {
         final CatalogSchema schema = SampleCatalogRecord.class.getAnnotation(CatalogSchema.class);
-        final var component = SampleCatalogRecord.class.getRecordComponents()[0];
+        final RecordComponent component = SampleCatalogRecord.class.getRecordComponents()[0];
 
         assertThat(List.of(schema.value()))
                 .containsExactly("components/schemas/simple-user", "operations/users/get/200");

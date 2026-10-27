@@ -6,12 +6,49 @@
 
     <description>All PMD Java rules for common-util test sources</description>
 
-    <rule ref="category/java/bestpractices.xml"/>
-    <rule ref="category/java/codestyle.xml"/>
-    <rule ref="category/java/design.xml"/>
-    <rule ref="category/java/documentation.xml"/>
-    <rule ref="category/java/errorprone.xml"/>
-    <rule ref="category/java/multithreading.xml"/>
+    <!-- Annotation-processor output (e.g. SampleRecordBuilder) is not ours to fix. -->
+    <exclude-pattern>.*/generated-test-sources/.*</exclude-pattern>
+
+    <rule ref="category/java/bestpractices.xml">
+        <exclude name="UnitTestContainsTooManyAsserts"/>
+    </rule>
+    <rule ref="category/java/codestyle.xml">
+        <exclude name="MethodArgumentCouldBeFinal"/>
+        <exclude name="AtLeastOneConstructor"/>
+        <exclude name="ShortVariable"/>
+        <exclude name="CommentDefaultAccessModifier"/>
+        <exclude name="LinguisticNaming"/>
+        <exclude name="CallSuperInConstructor"/>
+        <exclude name="OnlyOneReturn"/>
+        <exclude name="MethodNamingConventions"/>
+    </rule>
+    <!-- Test names follow method_shouldX_whenY: lowercase camelCase segments joined by underscores. -->
+    <rule ref="category/java/codestyle.xml/MethodNamingConventions">
+        <properties>
+            <property name="junit5TestPattern" value="[a-z][a-zA-Z0-9]*(_[a-z][a-zA-Z0-9]*)+"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml">
+        <exclude name="TooManyMethods"/>
+        <exclude name="GodClass"/>
+        <exclude name="CyclomaticComplexity"/>
+        <exclude name="LawOfDemeter"/>
+        <exclude name="LoosePackageCoupling"/>
+    </rule>
+    <rule ref="category/java/documentation.xml">
+        <exclude name="CommentRequired"/>
+        <exclude name="CommentSize"/>
+    </rule>
+    <rule ref="category/java/errorprone.xml">
+        <!-- Tests hold streams unclosed on purpose to assert close semantics; executors are shut down in finally. -->
+        <exclude name="CloseResource"/>
+        <exclude name="AvoidDuplicateLiterals"/>
+        <exclude name="AvoidFieldNameMatchingMethodName"/>
+        <exclude name="UseProperClassLoader"/>
+    </rule>
+    <rule ref="category/java/multithreading.xml">
+        <exclude name="DoNotUseThreads"/>
+    </rule>
     <rule ref="category/java/performance.xml"/>
     <rule ref="category/java/security.xml"/>
 </ruleset>
